@@ -12,11 +12,15 @@
   "minMsi": 100,
   "mutators": {
     "@default": true,
+    "global-ignoreSourceCodeByRegex": [
+      "Assert::.*",
+      "(.+)->assert\\(.*\\);"
+    ],
     "TrueValue": {
       "ignoreSourceCodeByRegex": [
-        ".*match\\s*\\(true\\).*",
+        ".*match\\s*\\(true\\).*"
       ],
-    },
+    }
   },
   "logs": {
     "text": "build/infection.log",
