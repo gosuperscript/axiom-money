@@ -6,16 +6,18 @@ namespace Superscript\Schema\Money\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use InvalidArgumentException;
 use Superscript\Interval\Interval;
-use Superscript\Monads\Option\Some;
 use Superscript\Monads\Result\Result;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Types\Type;
 
-use function Psl\Type\string;
+use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
+use function Superscript\Monads\Result\Err;
+use function Superscript\Monads\Result\Ok;
 
 /**
  * @implements Type<MonetaryInterval>
@@ -26,13 +28,19 @@ final readonly class MonetaryIntervalType implements Type
 
     public function transform(mixed $value): Result
     {
-        return attempt(fn() => Interval::fromString(string()->assert($value)))
-            ->map(fn(Interval $interval) => new MonetaryInterval(
-                left: Money::of($interval->left->toInt(), $this->currency),
-                right: Money::of($interval->right->toInt(), $this->currency),
-                notation: IntervalNotation::from($interval->notation->value),
-            ))
-            ->map(fn(MonetaryInterval $interval) => new Some($interval))
+        return (match (true) {
+            $value instanceof MonetaryInterval => $value->left->getCurrency()->is($this->currency)
+                ? Ok($value)
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->left->getCurrency()->getCurrencyCode()))),
+            is_string($value) => attempt(fn() => Interval::fromString($value))
+                ->map(fn(Interval $interval) => new MonetaryInterval(
+                    left: Money::of($interval->left->toInt(), $this->currency),
+                    right: Money::of($interval->right->toInt(), $this->currency),
+                    notation: IntervalNotation::from($interval->notation->value),
+                )),
+            default => Err(new TransformValueException(type: 'monetary-interval', value: $value)),
+        })
+            ->map(fn(MonetaryInterval $interval) => Some($interval))
             ->mapErr(fn() => new TransformValueException(type: 'monetary-interval', value: $value));
     }
 
