@@ -12,17 +12,17 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Money\MoneyParser;
-use Superscript\Schema\Money\Types\MoneyType;
+use Superscript\Schema\Money\Types\DynamicMonetaryType;
 
-#[CoversClass(MoneyType::class)]
+#[CoversClass(DynamicMonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
-class MoneyTypeTest extends TestCase
+class DynamicMonetaryTypeTest extends TestCase
 {
     #[DataProvider('transformProvider')]
     #[Test]
     public function it_can_transform_a_value(mixed $value, Money $expected)
     {
-        $type = new MoneyType();
+        $type = new DynamicMonetaryType();
         $this->assertTrue($type->transform($value)->unwrap()->unwrap()->isEqualTo($expected));
     }
 
@@ -38,7 +38,7 @@ class MoneyTypeTest extends TestCase
     #[Test]
     public function it_returns_err_if_it_fails_to_transform()
     {
-        $type = new MoneyType();
+        $type = new DynamicMonetaryType();
         $result = $type->transform($value = 'foobar');
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [\'foobar\']', $result->unwrapErr()->getMessage());
@@ -49,7 +49,7 @@ class MoneyTypeTest extends TestCase
     #[Test]
     public function it_can_compare_two_values(string $a, string $b, bool $expected)
     {
-        $type = new MoneyType();
+        $type = new DynamicMonetaryType();
         $a = $type->transform($a)->unwrap()->unwrap();
         $b = $type->transform($b)->unwrap()->unwrap();
         $this->assertSame($expected, $type->compare($a, $b));
@@ -69,7 +69,7 @@ class MoneyTypeTest extends TestCase
     #[Test]
     public function it_can_format_value(string $value, string $expected)
     {
-        $type = new MoneyType();
+        $type = new DynamicMonetaryType();
         $value = $type->transform($value)->unwrap()->unwrap();
         $this->assertSame($expected, $type->format($value));
     }
