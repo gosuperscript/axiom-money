@@ -12,7 +12,6 @@ use Superscript\Schema\Money\MoneyParser;
 use Superscript\Schema\Types\Type;
 
 use function Psl\Type\non_empty_string;
-use function Superscript\Monads\Result\attempt;
 
 /**
  * @implements Type<Money>
