@@ -39,6 +39,7 @@ class MonetaryTypeTest extends TestCase
             ['100.000', 'EUR', Money::of(100, 'EUR')],
             ['1234.567', 'IQD', Money::of(1234.567, 'IQD')],
             ['1234.5678', 'UYW', Money::of(1234.5678, 'UYW')],
+            [Money::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
         ];
     }
 
@@ -50,7 +51,7 @@ class MonetaryTypeTest extends TestCase
         $result = $type->transform($value);
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $formattedValue = (new Exporter())->shortenedExport($value);
-        $this->assertEquals('Unable to transform into [money] from ['.$formattedValue.']', $result->unwrapErr()->getMessage());
+        $this->assertEquals('Unable to transform into [money] from [' . $formattedValue . ']', $result->unwrapErr()->getMessage());
 
     }
 
@@ -69,6 +70,7 @@ class MonetaryTypeTest extends TestCase
             ['1234.56789', 'UYU'],
             [[]],
             [null],
+            [Money::of(100, 'USD'), 'EUR'], // Different currency
         ];
     }
 
