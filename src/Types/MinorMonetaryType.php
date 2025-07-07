@@ -9,7 +9,6 @@ use Brick\Money\Money;
 use Superscript\Monads\Option\Some;
 use Superscript\Monads\Result\Result;
 use Superscript\Schema\Exceptions\TransformValueException;
-use Superscript\Schema\Money\MoneyParser;
 use Superscript\Schema\Types\Type;
 
 use function Psl\Type\float;
@@ -24,9 +23,7 @@ use function Superscript\Monads\Result\attempt;
  */
 final readonly class MinorMonetaryType implements Type
 {
-    public function __construct(public Currency $currency)
-    {
-    }
+    public function __construct(public Currency $currency) {}
 
     public function transform(mixed $value): Result
     {

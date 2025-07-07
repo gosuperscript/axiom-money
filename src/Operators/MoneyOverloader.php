@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Superscript\Schema\Money\Operators;
 
 use Brick\Money\Money;
 use Superscript\Schema\Operators\OperatorOverloader;
+
 use function Psl\Type\instance_of;
 
 final readonly class MoneyOverloader implements OperatorOverloader

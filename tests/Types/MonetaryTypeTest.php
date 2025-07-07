@@ -50,7 +50,7 @@ class MonetaryTypeTest extends TestCase
         $result = $type->transform($value);
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $formattedValue = (new Exporter())->shortenedExport($value);
-        $this->assertEquals('Unable to transform into [money] from ['.$formattedValue.']', $result->unwrapErr()->getMessage());
+        $this->assertEquals('Unable to transform into [money] from [' . $formattedValue . ']', $result->unwrapErr()->getMessage());
 
     }
 
