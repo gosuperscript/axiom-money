@@ -6,7 +6,7 @@ namespace Superscript\Schema\Money\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
-use Superscript\Monads\Option\Some;
+use InvalidArgumentException;
 use Superscript\Monads\Result\Result;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Types\Type;
@@ -17,6 +17,9 @@ use function Psl\Type\non_empty_string;
 use function Psl\Type\string;
 use function Psl\Type\union;
 use function Superscript\Monads\Result\attempt;
+use function Superscript\Monads\Result\Err;
+use function Superscript\Monads\Result\Ok;
+use function Superscript\Monads\Option\Some;
 
 /**
  * @implements Type<Money>
@@ -27,10 +30,17 @@ final readonly class MinorMonetaryType implements Type
 
     public function transform(mixed $value): Result
     {
-        return attempt(function () use ($value) {
-            union(string(), float(), int())->assert($value);
-            return Money::ofMinor($value, $this->currency);
-        })->map(fn(Money $money) => new Some($money))->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
+        return (match (true) {
+            $value instanceof Money => $value->getCurrency()->is($this->currency)
+                ? Ok($value)
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->getCurrency()->getCurrencyCode()))),
+            default => attempt(function () use ($value) {
+                union(string(), float(), int())->assert($value);
+                return Money::ofMinor($value, $this->currency);
+            }),
+        })
+            ->map(fn(Money $money) => Some($money))
+            ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
     public function compare(mixed $a, mixed $b): bool

@@ -32,6 +32,7 @@ class DynamicMonetaryTypeTest extends TestCase
             ['EUR 1', Money::of(1, 'EUR')],
             ['£1.23', Money::of(1.23, 'GBP')],
             ['USD 100.50', Money::of(100.50, 'USD')],
+            [Money::of(100, 'EUR'), Money::of(100, 'EUR')],
         ];
     }
 

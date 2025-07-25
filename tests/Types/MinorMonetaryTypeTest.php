@@ -35,18 +35,18 @@ class MinorMonetaryTypeTest extends TestCase
             [150, 'GBP', Money::ofMinor(150, 'GBP')],
             ['150', 'EUR', Money::ofMinor(150, 'EUR')],
             ['100.000', 'EUR', Money::ofMinor(100, 'EUR')],
+            [Money::ofMinor(100, 'GBP'), 'GBP', Money::ofMinor(100, 'GBP')],
         ];
     }
 
     #[Test]
     #[DataProvider('errorProvider')]
-    public function it_returns_err_if_it_fails_to_transform(mixed $value)
+    public function it_returns_err_if_it_fails_to_transform(mixed $value, string $currency = 'EUR')
     {
-        $type = new MinorMonetaryType(Currency::of('EUR'));
+        $type = new MinorMonetaryType(Currency::of($currency));
         $result = $type->transform($value);
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
-        $formattedValue = (new Exporter())->shortenedExport($value);
-        $this->assertEquals('Unable to transform into [money] from [' . $formattedValue . ']', $result->unwrapErr()->getMessage());
+        $this->assertEquals('Unable to transform into [money] from [' . TransformValueException::format($value) . ']', $result->unwrapErr()->getMessage());
 
     }
 
@@ -62,6 +62,7 @@ class MinorMonetaryTypeTest extends TestCase
             ['GBP'],
             [[]],
             [null],
+            [Money::ofMinor(100, 'USD'), 'EUR'], // Mismatching currency
         ];
     }
 

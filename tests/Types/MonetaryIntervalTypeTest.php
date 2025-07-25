@@ -33,6 +33,7 @@ class MonetaryIntervalTypeTest extends TestCase
     {
         return [
             ['[1,2]', new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Closed)],
+            [MonetaryInterval::fromString('[EUR 1,EUR 2]'), new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Closed)],
         ];
     }
 
@@ -52,6 +53,14 @@ class MonetaryIntervalTypeTest extends TestCase
         $result = $type->transform(123);
         $this->assertEquals(new TransformValueException(type: 'monetary-interval', value: 123), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [monetary-interval] from [123]', $result->unwrapErr()->getMessage());
+    }
+
+    #[Test]
+    public function it_returns_err_if_value_is_monetary_interval_of_different_currency(): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('EUR'));
+        $result = $type->transform(new MonetaryInterval(Money::of(1, 'USD'), Money::of(2, 'USD'), IntervalNotation::Closed));
+        $this->assertEquals(new TransformValueException(type: 'monetary-interval', value: '[USD 1.00,USD 2.00]'), $result->unwrapErr());
     }
 
     #[DataProvider('compareProvider')]
