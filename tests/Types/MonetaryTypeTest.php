@@ -11,11 +11,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use SebastianBergmann\Exporter\Exporter;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Money\MoneyParser;
 use Superscript\Schema\Money\Types\MonetaryType;
-use function Psl\Type\instance_of;
 
 #[CoversClass(MonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
@@ -26,7 +24,7 @@ class MonetaryTypeTest extends TestCase
     public function it_can_transform_a_value(mixed $value, string $currency, Money $expected)
     {
         $type = new MonetaryType(Currency::of($currency));
-        $this->assertTrue($type->transform($value)->unwrap()->unwrap()->isEqualTo($expected));
+        $this->assertTrue($type->coerce($value)->unwrap()->unwrap()->isEqualTo($expected));
     }
 
     public static function transformProvider(): array
@@ -49,7 +47,7 @@ class MonetaryTypeTest extends TestCase
     public function it_returns_err_if_it_fails_to_transform(mixed $value, string $currency = 'EUR')
     {
         $type = new MonetaryType(Currency::of($currency));
-        $result = $type->transform($value);
+        $result = $type->coerce($value);
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [' . TransformValueException::format($value) . ']', $result->unwrapErr()->getMessage());
 
@@ -98,5 +96,30 @@ class MonetaryTypeTest extends TestCase
             [Money::of(1234.56, 'GBP'), '£1,234.56'],
             [Money::of(1000000, 'EUR'), '€1,000,000.00'],
         ];
+    }
+
+    #[Test]
+    public function it_can_assert_a_money_instance_with_correct_currency(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $value = Money::of(100, 'EUR');
+        $result = $type->assert($value);
+        $this->assertTrue($result->unwrap()->unwrap()->isEqualTo($value));
+    }
+
+    #[Test]
+    public function it_returns_err_when_asserting_non_money_value(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $result = $type->assert($value = 'not money');
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
+    }
+
+    #[Test]
+    public function it_returns_err_when_asserting_money_with_wrong_currency(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $result = $type->assert($value = Money::of(100, 'USD'));
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 }

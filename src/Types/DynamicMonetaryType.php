@@ -5,22 +5,40 @@ declare(strict_types=1);
 namespace Superscript\Schema\Money\Types;
 
 use Brick\Money\Money;
-use Superscript\Monads\Option\Some;
+use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Money\MoneyParser;
 use Superscript\Schema\Types\Type;
 
 use function Psl\Type\non_empty_string;
+use function Superscript\Monads\Option\Some;
+use function Superscript\Monads\Result\Err;
+use function Superscript\Monads\Result\Ok;
 
 /**
  * @implements Type<Money>
  */
 final readonly class DynamicMonetaryType implements Type
 {
-    public function transform(mixed $value): Result
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function assert(mixed $value): Result
     {
-        return MoneyParser::parse($value)->map(fn(Money $money) => new Some($money))
+        if (!$value instanceof Money) {
+            return Err(new TransformValueException(type: 'money', value: $value));
+        }
+
+        return Ok(Some($value));
+    }
+
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function coerce(mixed $value): Result
+    {
+        return MoneyParser::parse($value)->map(fn(Money $money) => Some($money))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
