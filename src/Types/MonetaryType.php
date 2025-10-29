@@ -7,6 +7,7 @@ namespace Superscript\Schema\Money\Types;
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
+use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Types\Type;
@@ -28,7 +29,26 @@ final readonly class MonetaryType implements Type
 {
     public function __construct(public Currency $currency) {}
 
-    public function transform(mixed $value): Result
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function assert(mixed $value): Result
+    {
+        if (!$value instanceof Money) {
+            return Err(new TransformValueException(type: 'money', value: $value));
+        }
+
+        if (!$value->getCurrency()->is($this->currency)) {
+            return Err(new TransformValueException(type: 'money', value: $value));
+        }
+
+        return Ok(Some($value));
+    }
+
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function coerce(mixed $value): Result
     {
         return (match (true) {
             $value instanceof Money => $value->getCurrency()->is($this->currency)

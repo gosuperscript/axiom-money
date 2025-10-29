@@ -8,6 +8,7 @@ use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
 use Superscript\Interval\Interval;
+use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
@@ -26,7 +27,26 @@ final readonly class MonetaryIntervalType implements Type
 {
     public function __construct(public Currency $currency) {}
 
-    public function transform(mixed $value): Result
+    /**
+     * @return Result<Option<MonetaryInterval>, TransformValueException>
+     */
+    public function assert(mixed $value): Result
+    {
+        if (!$value instanceof MonetaryInterval) {
+            return Err(new TransformValueException(type: 'monetary-interval', value: $value));
+        }
+
+        if (!$value->left->getCurrency()->is($this->currency)) {
+            return Err(new TransformValueException(type: 'monetary-interval', value: $value));
+        }
+
+        return Ok(Some($value));
+    }
+
+    /**
+     * @return Result<Option<MonetaryInterval>, TransformValueException>
+     */
+    public function coerce(mixed $value): Result
     {
         return (match (true) {
             $value instanceof MonetaryInterval => $value->left->getCurrency()->is($this->currency)

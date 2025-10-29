@@ -23,7 +23,7 @@ class DynamicMonetaryTypeTest extends TestCase
     public function it_can_transform_a_value(mixed $value, Money $expected)
     {
         $type = new DynamicMonetaryType();
-        $this->assertTrue($type->transform($value)->unwrap()->unwrap()->isEqualTo($expected));
+        $this->assertTrue($type->coerce($value)->unwrap()->unwrap()->isEqualTo($expected));
     }
 
     public static function transformProvider(): array
@@ -40,7 +40,7 @@ class DynamicMonetaryTypeTest extends TestCase
     public function it_returns_err_if_it_fails_to_transform()
     {
         $type = new DynamicMonetaryType();
-        $result = $type->transform($value = 'foobar');
+        $result = $type->coerce($value = 'foobar');
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [\'foobar\']', $result->unwrapErr()->getMessage());
 
@@ -51,8 +51,8 @@ class DynamicMonetaryTypeTest extends TestCase
     public function it_can_compare_two_values(string $a, string $b, bool $expected)
     {
         $type = new DynamicMonetaryType();
-        $a = $type->transform($a)->unwrap()->unwrap();
-        $b = $type->transform($b)->unwrap()->unwrap();
+        $a = $type->coerce($a)->unwrap()->unwrap();
+        $b = $type->coerce($b)->unwrap()->unwrap();
         $this->assertSame($expected, $type->compare($a, $b));
     }
 
@@ -71,7 +71,7 @@ class DynamicMonetaryTypeTest extends TestCase
     public function it_can_format_value(string $value, string $expected)
     {
         $type = new DynamicMonetaryType();
-        $value = $type->transform($value)->unwrap()->unwrap();
+        $value = $type->coerce($value)->unwrap()->unwrap();
         $this->assertSame($expected, $type->format($value));
     }
 
@@ -82,5 +82,22 @@ class DynamicMonetaryTypeTest extends TestCase
             ['£1.23', '£1.23'],
             ['EUR 10000', '€10,000.00'],
         ];
+    }
+
+    #[Test]
+    public function it_can_assert_a_money_instance(): void
+    {
+        $type = new DynamicMonetaryType();
+        $value = Money::of(100, 'EUR');
+        $result = $type->assert($value);
+        $this->assertTrue($result->unwrap()->unwrap()->isEqualTo($value));
+    }
+
+    #[Test]
+    public function it_returns_err_when_asserting_non_money_value(): void
+    {
+        $type = new DynamicMonetaryType();
+        $result = $type->assert($value = 'not money');
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 }

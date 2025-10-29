@@ -7,6 +7,7 @@ namespace Superscript\Schema\Money\Types;
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
+use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Schema\Exceptions\TransformValueException;
 use Superscript\Schema\Types\Type;
@@ -16,10 +17,10 @@ use function Psl\Type\int;
 use function Psl\Type\non_empty_string;
 use function Psl\Type\string;
 use function Psl\Type\union;
+use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
 use function Superscript\Monads\Result\Err;
 use function Superscript\Monads\Result\Ok;
-use function Superscript\Monads\Option\Some;
 
 /**
  * @implements Type<Money>
@@ -28,7 +29,26 @@ final readonly class MinorMonetaryType implements Type
 {
     public function __construct(public Currency $currency) {}
 
-    public function transform(mixed $value): Result
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function assert(mixed $value): Result
+    {
+        if (!$value instanceof Money) {
+            return Err(new TransformValueException(type: 'money', value: $value));
+        }
+
+        if (!$value->getCurrency()->is($this->currency)) {
+            return Err(new TransformValueException(type: 'money', value: $value));
+        }
+
+        return Ok(Some($value));
+    }
+
+    /**
+     * @return Result<Option<Money>, TransformValueException>
+     */
+    public function coerce(mixed $value): Result
     {
         return (match (true) {
             $value instanceof Money => $value->getCurrency()->is($this->currency)

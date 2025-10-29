@@ -9,8 +9,6 @@ use Brick\Money\Money;
 use InvalidArgumentException;
 use NumberFormatter;
 use SebastianBergmann\Exporter\Exporter;
-use Superscript\Monads\Result\Err;
-use Superscript\Monads\Result\Ok;
 use Superscript\Monads\Result\Result;
 
 use function Psl\Type\non_empty_string;
@@ -28,7 +26,7 @@ class MoneyParser
     public static function parse(mixed $money): Result
     {
         if ($money instanceof Money) {
-            return new Ok($money);
+            return Ok($money);
         }
 
         if (is_string($money)) {
@@ -56,7 +54,7 @@ class MoneyParser
             }
         }
 
-        return new Err(new InvalidArgumentException(
+        return Err(new InvalidArgumentException(
             message: sprintf('Could not parse [%s] as money', new Exporter()->shortenedExport($money)),
         ));
     }
