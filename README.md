@@ -129,19 +129,19 @@ $b = Money::of(50, 'EUR');
 
 // Addition
 $sum = $overloader->evaluate($a, $b, '+');
-// Result: EUR 150
+// Result: EUR 150.00
 
 // Subtraction
 $diff = $overloader->evaluate($a, $b, '-');
-// Result: EUR 50
+// Result: EUR 50.00
 
-// Multiplication
+// Multiplication (multiplies left by the amount from right)
 $product = $overloader->evaluate($a, $b, '*');
-// Result: EUR 5000 (100 * 50)
+// Result: EUR 5000.00 (100 * 50)
 
-// Division
+// Division (divides left by the amount from right)
 $quotient = $overloader->evaluate($a, $b, '/');
-// Result: EUR 2 (100 / 50)
+// Result: EUR 2.00 (100 / 50)
 
 // Comparisons
 $isEqual = $overloader->evaluate($a, $b, '==');     // false
