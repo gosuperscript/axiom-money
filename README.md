@@ -2,6 +2,8 @@
 
 A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
 
+**Note:** This library is designed to work on top of [gosuperscript/schema](https://github.com/gosuperscript/schema) and extends it with monetary value support.
+
 ## Features
 
 - **Schema Types**: Type-safe monetary value handling with currency validation
