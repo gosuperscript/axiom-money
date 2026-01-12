@@ -1,6 +1,6 @@
 {
     "name": "gosuperscript/axiom-money",
-    "description": "A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation",
+    "description": "Monetary extension for Axiom - provides schema types, parsers, and operators for monetary values with strong type safety and currency validation",
     "type": "library",
     "license": "MIT",
     "keywords": ["money", "currency", "schema", "validation", "monetary", "interval"],
