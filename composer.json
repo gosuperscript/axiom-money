@@ -1,5 +1,5 @@
 {
-    "name": "gosuperscript/schema-money",
+    "name": "gosuperscript/axiom-money",
     "type": "library",
     "licsense": "proprietary",
     "require": {
