@@ -1,4 +1,4 @@
-# Schema Money
+# Axiom Money
 
 A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
 
@@ -26,7 +26,7 @@ A PHP library providing schema types, parsers, and operators for monetary values
 Install via Composer:
 
 ```bash
-composer require gosuperscript/schema-money
+composer require gosuperscript/axiom-money
 ```
 
 ## Usage
