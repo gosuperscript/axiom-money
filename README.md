@@ -251,8 +251,10 @@ This library builds on several excellent packages:
 
 ## License
 
-Proprietary
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-This is a private package. Please contact the maintainers for contribution guidelines.
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate and maintain the existing code quality standards.

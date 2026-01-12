@@ -1,7 +1,10 @@
 {
     "name": "gosuperscript/axiom-money",
+    "description": "A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation",
     "type": "library",
-    "licsense": "proprietary",
+    "license": "MIT",
+    "keywords": ["money", "currency", "schema", "validation", "monetary", "interval"],
+    "homepage": "https://github.com/gosuperscript/axiom-money",
     "require": {
         "php": "^8.4",
         "ext-intl": "*",
@@ -44,11 +47,5 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true,
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://mannum.github.io/satis"
-        }
-    ]
+    "prefer-stable": true
 }
