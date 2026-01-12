@@ -1,8 +1,11 @@
 # Axiom Money
 
-A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
+[![Tests](https://github.com/gosuperscript/axiom-money/workflows/Tests/badge.svg)](https://github.com/gosuperscript/axiom-money/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Note:** This library is designed to work on top of [gosuperscript/schema](https://github.com/gosuperscript/schema) and extends it with monetary value support.
+A monetary extension for [Axiom](https://github.com/gosuperscript/axiom), providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
+
+**Note:** This library extends [Axiom](https://github.com/gosuperscript/axiom) (built on [gosuperscript/schema](https://github.com/gosuperscript/schema)) with monetary value support.
 
 ## Features
 
@@ -251,8 +254,10 @@ This library builds on several excellent packages:
 
 ## License
 
-Proprietary
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-This is a private package. Please contact the maintainers for contribution guidelines.
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate and maintain the existing code quality standards.
