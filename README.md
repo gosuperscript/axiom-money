@@ -1,5 +1,8 @@
 # Axiom Money
 
+[![Tests](https://github.com/gosuperscript/axiom-money/workflows/Tests/badge.svg)](https://github.com/gosuperscript/axiom-money/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A PHP library providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
 
 **Note:** This library is designed to work on top of [gosuperscript/schema](https://github.com/gosuperscript/schema) and extends it with monetary value support.
