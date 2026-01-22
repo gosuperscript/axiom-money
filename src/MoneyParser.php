@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money;
+namespace Superscript\Axiom\Money;
 
 use Brick\Math\Exception\RoundingNecessaryException;
 use Brick\Money\Money;

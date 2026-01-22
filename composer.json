@@ -9,7 +9,7 @@
         "php": "^8.4",
         "ext-intl": "*",
         "brick/money": "^0.10.1",
-        "gosuperscript/schema": "^0.1.0",
+        "gosuperscript/axiom": "^0.2.0",
         "superscript/interval": "^1.0",
         "superscript/monetary-interval": "^0.1.2"
     },
@@ -22,12 +22,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Superscript\\Schema\\Money\\": "src/"
+            "Superscript\\Axiom\\Money\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Superscript\\Schema\\Money\\Tests\\": "tests/"
+            "Superscript\\Axiom\\Money\\Tests\\": "tests/"
         }
     },
     "scripts": {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Operators;
+namespace Superscript\Axiom\Money\Operators;
 
 use Brick\Money\Money;
 use Superscript\MonetaryInterval\MonetaryInterval;

@@ -39,7 +39,7 @@ composer require gosuperscript/axiom-money
 ```php
 use Brick\Money\Currency;
 use Brick\Money\Money;
-use Superscript\Schema\Money\Types\MonetaryType;
+use Superscript\Axiom\Money\Types\MonetaryType;
 
 // Create a monetary type for EUR
 $eurType = new MonetaryType(Currency::of('EUR'));
@@ -62,7 +62,7 @@ $formatted = $eurType->format(Money::of(100.50, 'EUR'));
 Parse money from various string formats:
 
 ```php
-use Superscript\Schema\Money\MoneyParser;
+use Superscript\Axiom\Money\MoneyParser;
 use Brick\Money\Money;
 
 // Parse from "CURRENCY AMOUNT" format
@@ -89,7 +89,7 @@ Work with minor currency units (cents, pence, etc.):
 
 ```php
 use Brick\Money\Currency;
-use Superscript\Schema\Money\Types\MinorMonetaryType;
+use Superscript\Axiom\Money\Types\MinorMonetaryType;
 
 $gbpType = new MinorMonetaryType(Currency::of('GBP'));
 
@@ -107,7 +107,7 @@ $money = $gbpType->coerce('2550')->unwrap()->unwrap();
 Automatically detect and parse currency from string:
 
 ```php
-use Superscript\Schema\Money\Types\DynamicMonetaryType;
+use Superscript\Axiom\Money\Types\DynamicMonetaryType;
 
 $dynamicType = new DynamicMonetaryType();
 
@@ -125,7 +125,7 @@ Perform mathematical operations on Money objects:
 
 ```php
 use Brick\Money\Money;
-use Superscript\Schema\Money\Operators\MoneyOverloader;
+use Superscript\Axiom\Money\Operators\MoneyOverloader;
 
 $overloader = new MoneyOverloader();
 
@@ -161,7 +161,7 @@ Work with ranges of monetary values:
 ```php
 use Brick\Money\Currency;
 use Brick\Money\Money;
-use Superscript\Schema\Money\Types\MonetaryIntervalType;
+use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\MonetaryInterval\IntervalNotation;
 
@@ -186,7 +186,7 @@ $formatted = $intervalType->format($interval);
 ### Monetary Interval Operations
 
 ```php
-use Superscript\Schema\Money\Operators\MonetaryIntervalOverloader;
+use Superscript\Axiom\Money\Operators\MonetaryIntervalOverloader;
 
 $overloader = new MonetaryIntervalOverloader();
 

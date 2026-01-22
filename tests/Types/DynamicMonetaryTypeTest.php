@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Tests\Types;
+namespace Superscript\Axiom\Money\Tests\Types;
 
 use Brick\Money\Money;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Superscript\Schema\Exceptions\TransformValueException;
-use Superscript\Schema\Money\MoneyParser;
-use Superscript\Schema\Money\Types\DynamicMonetaryType;
+use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Money\MoneyParser;
+use Superscript\Axiom\Money\Types\DynamicMonetaryType;
 
 #[CoversClass(DynamicMonetaryType::class)]
 #[UsesClass(MoneyParser::class)]

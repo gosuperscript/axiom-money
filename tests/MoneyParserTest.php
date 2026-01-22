@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Tests;
+namespace Superscript\Axiom\Money\Tests;
 
 use Brick\Money\Money;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SebastianBergmann\Exporter\Exporter;
-use Superscript\Schema\Money\MoneyParser;
+use Superscript\Axiom\Money\MoneyParser;
 
 #[CoversClass(MoneyParser::class)]
 class MoneyParserTest extends TestCase

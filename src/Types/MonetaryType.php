@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Types;
+namespace Superscript\Axiom\Money\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
-use Superscript\Schema\Exceptions\TransformValueException;
-use Superscript\Schema\Types\Type;
+use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Types\Type;
 
 use function Psl\Type\float;
 use function Psl\Type\int;

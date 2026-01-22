@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Tests\Types;
+namespace Superscript\Axiom\Money\Tests\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
@@ -13,9 +13,9 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
-use Superscript\Schema\Exceptions\TransformValueException;
-use Superscript\Schema\Money\MoneyParser;
-use Superscript\Schema\Money\Types\MonetaryIntervalType;
+use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Money\MoneyParser;
+use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 
 #[CoversClass(MonetaryIntervalType::class)]
 #[UsesClass(MoneyParser::class)]

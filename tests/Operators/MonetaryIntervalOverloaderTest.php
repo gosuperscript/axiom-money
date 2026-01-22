@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Operators;
+namespace Superscript\Axiom\Money\Tests\Operators;
 
 use Brick\Money\Money;
 use Generator;
@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Psl\Type\Exception\AssertException;
 use Superscript\MonetaryInterval\MonetaryInterval;
-use Superscript\Schema\Money\Operators\MonetaryIntervalOverloader;
+use Superscript\Axiom\Money\Operators\MonetaryIntervalOverloader;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(MonetaryIntervalOverloader::class)]
