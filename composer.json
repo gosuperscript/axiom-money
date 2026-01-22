@@ -22,12 +22,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Superscript\\Schema\\Money\\": "src/"
+            "Superscript\\Axiom\\Money\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Superscript\\Schema\\Money\\Tests\\": "tests/"
+            "Superscript\\Axiom\\Money\\Tests\\": "tests/"
         }
     },
     "scripts": {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Superscript\Schema\Money\Types;
+namespace Superscript\Axiom\Money\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
