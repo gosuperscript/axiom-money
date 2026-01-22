@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Superscript\Axiom\Money\Operators;
 
 use Brick\Money\Money;
-use Superscript\Schema\Operators\OperatorOverloader;
+use Superscript\Axiom\Operators\OperatorOverloader;
 
 use function Psl\Type\instance_of;
 

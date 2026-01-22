@@ -9,8 +9,8 @@ use Brick\Money\Money;
 use InvalidArgumentException;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
-use Superscript\Schema\Exceptions\TransformValueException;
-use Superscript\Schema\Types\Type;
+use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Types\Type;
 
 use function Psl\Type\float;
 use function Psl\Type\int;
