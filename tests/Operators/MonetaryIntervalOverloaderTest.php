@@ -9,7 +9,6 @@ use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Psl\Type\Exception\AssertException;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Axiom\Money\Operators\MonetaryIntervalOverloader;
 use PHPUnit\Framework\TestCase;
@@ -63,7 +62,10 @@ class MonetaryIntervalOverloaderTest extends TestCase
     {
         $overloader = new MonetaryIntervalOverloader();
         $this->assertTrue($overloader->supportsOverloading(left: $left, right: $right, operator: $operator));
-        $this->assertSame($expected, $overloader->evaluate(left: $left, right: $right, operator: $operator));
+
+        $result = $overloader->evaluate(left: $left, right: $right, operator: $operator);
+        $this->assertTrue($result->isOk());
+        $this->assertSame($expected, $result->unwrap());
     }
 
     public static function comparisons(): Generator
@@ -95,32 +97,33 @@ class MonetaryIntervalOverloaderTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_operator(): void
+    public function it_returns_err_for_unsupported_operator(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported operator: %');
-
         $overloader = new MonetaryIntervalOverloader();
-        $overloader->evaluate(MonetaryInterval::fromString('[EUR 1,EUR 2]'), Money::of(2, 'EUR'), '%');
+        $result = $overloader->evaluate(MonetaryInterval::fromString('[EUR 1,EUR 2]'), Money::of(2, 'EUR'), '%');
+
+        $this->assertTrue($result->isErr());
+        $this->assertInstanceOf(\InvalidArgumentException::class, $result->unwrapErr());
+        $this->assertSame('Unsupported operator: %', $result->unwrapErr()->getMessage());
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_left_side(): void
+    public function it_returns_err_for_unsupported_left_side(): void
     {
-        $this->expectException(AssertException::class);
-
         $overloader = new MonetaryIntervalOverloader();
         $this->assertFalse($overloader->supportsOverloading('not a money interval', Money::of(1, 'EUR'), '+'));
-        $overloader->evaluate('not a money interval', Money::of(1, 'EUR'), '+');
+
+        $result = $overloader->evaluate('not a money interval', Money::of(1, 'EUR'), '+');
+        $this->assertTrue($result->isErr());
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_right_side(): void
+    public function it_returns_err_for_unsupported_right_side(): void
     {
-        $this->expectException(AssertException::class);
-
         $overloader = new MonetaryIntervalOverloader();
         $this->assertFalse($overloader->supportsOverloading(MonetaryInterval::fromString('[EUR 1, EUR 2]'), 'not a money', '+'));
-        $overloader->evaluate(Money::of(1, 'EUR'), 'not a money', '+');
+
+        $result = $overloader->evaluate(MonetaryInterval::fromString('[EUR 1, EUR 2]'), 'not a money', '+');
+        $this->assertTrue($result->isErr());
     }
 }

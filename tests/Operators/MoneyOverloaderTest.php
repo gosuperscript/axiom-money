@@ -9,7 +9,6 @@ use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Psl\Type\Exception\AssertException;
 use Superscript\Axiom\Money\Operators\MoneyOverloader;
 use PHPUnit\Framework\TestCase;
 
@@ -22,7 +21,10 @@ class MoneyOverloaderTest extends TestCase
     {
         $overloader = new MoneyOverloader();
         $this->assertTrue($overloader->supportsOverloading(left: $left, right: $right, operator: $operator));
-        $this->assertTrue($overloader->evaluate(left: $left, right: $right, operator: $operator)->isEqualTo($expected));
+
+        $result = $overloader->evaluate(left: $left, right: $right, operator: $operator);
+        $this->assertTrue($result->isOk());
+        $this->assertTrue($result->unwrap()->isEqualTo($expected));
     }
 
     public static function calculations(): Generator
@@ -39,7 +41,10 @@ class MoneyOverloaderTest extends TestCase
     {
         $overloader = new MoneyOverloader();
         $this->assertTrue($overloader->supportsOverloading(left: $left, right: $right, operator: $operator));
-        $this->assertSame($expected, $overloader->evaluate(left: $left, right: $right, operator: $operator));
+
+        $result = $overloader->evaluate(left: $left, right: $right, operator: $operator);
+        $this->assertTrue($result->isOk());
+        $this->assertSame($expected, $result->unwrap());
     }
 
     public static function comparisons(): Generator
@@ -53,32 +58,33 @@ class MoneyOverloaderTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_operator(): void
+    public function it_returns_err_for_unsupported_operator(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported operator: %');
-
         $overloader = new MoneyOverloader();
-        $overloader->evaluate(Money::of(1, 'EUR'), Money::of(2, 'EUR'), '%');
+        $result = $overloader->evaluate(Money::of(1, 'EUR'), Money::of(2, 'EUR'), '%');
+
+        $this->assertTrue($result->isErr());
+        $this->assertInstanceOf(\InvalidArgumentException::class, $result->unwrapErr());
+        $this->assertSame('Unsupported operator: %', $result->unwrapErr()->getMessage());
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_left_side(): void
+    public function it_returns_err_for_unsupported_left_side(): void
     {
-        $this->expectException(AssertException::class);
-
         $overloader = new MoneyOverloader();
         $this->assertFalse($overloader->supportsOverloading('not a money', Money::of(1, 'EUR'), '+'));
-        $overloader->evaluate('not a money', Money::of(1, 'EUR'), '+');
+
+        $result = $overloader->evaluate('not a money', Money::of(1, 'EUR'), '+');
+        $this->assertTrue($result->isErr());
     }
 
     #[Test]
-    public function it_throws_exception_for_unsupported_right_side(): void
+    public function it_returns_err_for_unsupported_right_side(): void
     {
-        $this->expectException(AssertException::class);
-
         $overloader = new MoneyOverloader();
         $this->assertFalse($overloader->supportsOverloading(Money::of(1, 'EUR'), 'not a money', '+'));
-        $overloader->evaluate(Money::of(1, 'EUR'), 'not a money', '+');
+
+        $result = $overloader->evaluate(Money::of(1, 'EUR'), 'not a money', '+');
+        $this->assertTrue($result->isErr());
     }
 }
