@@ -18,15 +18,15 @@ use Superscript\Axiom\Money\Types\DynamicMonetaryType;
 #[UsesClass(MoneyParser::class)]
 class DynamicMonetaryTypeTest extends TestCase
 {
-    #[DataProvider('transformProvider')]
+    #[DataProvider('coerceProvider')]
     #[Test]
-    public function it_can_transform_a_value(mixed $value, Money $expected)
+    public function it_can_coerce_a_value(mixed $value, Money $expected): void
     {
         $type = new DynamicMonetaryType();
         $this->assertTrue($type->coerce($value)->unwrap()->unwrap()->isEqualTo($expected));
     }
 
-    public static function transformProvider(): array
+    public static function coerceProvider(): array
     {
         return [
             ['EUR 1', Money::of(1, 'EUR')],
@@ -37,18 +37,34 @@ class DynamicMonetaryTypeTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_err_if_it_fails_to_transform()
+    public function it_returns_err_if_it_fails_to_coerce(): void
     {
         $type = new DynamicMonetaryType();
         $result = $type->coerce($value = 'foobar');
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [\'foobar\']', $result->unwrapErr()->getMessage());
+    }
 
+    #[DataProvider('assertProvider')]
+    #[Test]
+    public function it_can_assert_a_value(mixed $value, bool $shouldPass): void
+    {
+        $type = new DynamicMonetaryType();
+        $this->assertSame($shouldPass, $type->assert($value)->isOk());
+    }
+
+    public static function assertProvider(): array
+    {
+        return [
+            [Money::of(1, 'EUR'), true],
+            ['EUR 1', false],
+            [123, false],
+        ];
     }
 
     #[DataProvider('compareProvider')]
     #[Test]
-    public function it_can_compare_two_values(string $a, string $b, bool $expected)
+    public function it_can_compare_two_values(string $a, string $b, bool $expected): void
     {
         $type = new DynamicMonetaryType();
         $a = $type->coerce($a)->unwrap()->unwrap();
@@ -68,7 +84,7 @@ class DynamicMonetaryTypeTest extends TestCase
 
     #[DataProvider('formatProvider')]
     #[Test]
-    public function it_can_format_value(string $value, string $expected)
+    public function it_can_format_value(string $value, string $expected): void
     {
         $type = new DynamicMonetaryType();
         $value = $type->coerce($value)->unwrap()->unwrap();
