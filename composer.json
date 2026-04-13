@@ -9,7 +9,7 @@
         "php": "^8.4",
         "ext-intl": "*",
         "brick/money": "^0.10.1",
-        "gosuperscript/axiom": "^0.3.0",
+        "gosuperscript/axiom": "^0.4.0",
         "superscript/interval": "^1.0",
         "superscript/monetary-interval": "^0.1.2"
     },
@@ -17,7 +17,7 @@
         "infection/infection": "^0.29.14",
         "laravel/pint": "^1.22",
         "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^12.0",
+        "phpunit/phpunit": "^12.0,<12.5.12",
         "robiningelbrecht/phpunit-coverage-tools": "^1.9"
     },
     "autoload": {
