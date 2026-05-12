@@ -30,7 +30,7 @@ class MoneyParser
         }
 
         if (is_string($money)) {
-            \Safe\preg_match('/(?P<currency>[A-Z]{3}) (?P<amount>\d+(?:\.\d+)?)\b/', $money, $matches);
+            preg_match('/(?P<currency>[A-Z]{3}) (?P<amount>\d+(?:\.\d+)?)\b/', $money, $matches);
 
             if (!empty($matches)) {
                 try {
