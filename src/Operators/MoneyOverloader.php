@@ -12,6 +12,7 @@ use Superscript\Monads\Result\Result;
 
 use function Psl\Type\instance_of;
 use function Psl\Type\num;
+use function Psl\Type\numeric_string;
 use function Superscript\Monads\Result\attempt;
 
 final readonly class MoneyOverloader implements OperatorOverloader
@@ -48,7 +49,7 @@ final readonly class MoneyOverloader implements OperatorOverloader
     {
         [$money, $scalar] = $left instanceof AbstractMoney ? [$left, $right] : [$right, $left];
 
-        return $this->toRational(instance_of(AbstractMoney::class)->coerce($money))->multipliedBy(num()->coerce($scalar));
+        return $this->toRational(instance_of(AbstractMoney::class)->coerce($money))->multipliedBy($this->toNumber($scalar));
     }
 
     /**
@@ -57,7 +58,17 @@ final readonly class MoneyOverloader implements OperatorOverloader
      */
     private function divide(mixed $left, mixed $right): RationalMoney
     {
-        return $this->toRational(instance_of(AbstractMoney::class)->coerce($left))->dividedBy(num()->coerce($right));
+        return $this->toRational(instance_of(AbstractMoney::class)->coerce($left))->dividedBy($this->toNumber($right));
+    }
+
+    /**
+     * Coerces a numeric operand to a value Brick accepts. A numeric string is trimmed (is_numeric()
+     * tolerates surrounding whitespace that Brick's parser rejects) and passed through verbatim so
+     * Brick parses it exactly, rather than via a float that would cap precision at ~14 digits.
+     */
+    private function toNumber(mixed $value): int|float|string
+    {
+        return is_string($value) ? numeric_string()->coerce(trim($value)) : num()->coerce($value);
     }
 
     /**

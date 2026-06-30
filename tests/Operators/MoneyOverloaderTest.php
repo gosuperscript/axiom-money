@@ -130,6 +130,66 @@ class MoneyOverloaderTest extends TestCase
     }
 
     #[Test]
+    public function it_preserves_high_precision_numeric_string_scalars_exactly(): void
+    {
+        $overloader = new MoneyOverloader();
+
+        // An 18-digit multiplier exceeds float precision (~14 sig digits). Routing it through a
+        // float would silently truncate it; passing the numeric string straight to Brick keeps it
+        // exact, which is the whole point of returning a RationalMoney.
+        $result = $overloader->evaluate(Money::of(1, 'USD'), '0.123456789012345678', '*');
+
+        $this->assertTrue($result->isOk());
+        $this->assertTrue($result->unwrap()->isEqualTo(RationalMoney::of('0.123456789012345678', 'USD')));
+    }
+
+    #[Test]
+    public function it_accepts_whitespace_padded_numeric_string_scalars(): void
+    {
+        $overloader = new MoneyOverloader();
+
+        // is_numeric() accepts surrounding whitespace, so supportsOverloading claims it; the scalar
+        // is trimmed before reaching Brick (which would otherwise reject it) so evaluate agrees.
+        $this->assertTrue($overloader->supportsOverloading(Money::of(10, 'USD'), ' 2 ', '*'));
+
+        $result = $overloader->evaluate(Money::of(10, 'USD'), ' 2 ', '*');
+        $this->assertTrue($result->isOk());
+        $this->assertTrue($result->unwrap()->isEqualTo(Money::of(20, 'USD')));
+    }
+
+    #[Test]
+    #[DataProvider('crossCurrencyComparisons')]
+    public function it_returns_err_when_comparing_or_combining_different_currencies(string $operator): void
+    {
+        $overloader = new MoneyOverloader();
+
+        // Brick treats cross-currency comparison/combination as undefined and throws; we surface
+        // that as an Err rather than silently answering false/true. This is intentional and pinned.
+        $result = $overloader->evaluate(Money::of(1, 'USD'), Money::of(1, 'EUR'), $operator);
+
+        $this->assertTrue($result->isErr());
+    }
+
+    public static function crossCurrencyComparisons(): Generator
+    {
+        yield 'equal' => ['=='];
+        yield 'not equal' => ['!='];
+        yield 'less than' => ['<'];
+        yield 'add' => ['+'];
+    }
+
+    #[Test]
+    public function it_returns_err_when_dividing_by_zero(): void
+    {
+        $overloader = new MoneyOverloader();
+
+        // Divide-by-zero is a runtime value error, not a type error: supportsOverloading still
+        // claims it (the shape is valid), and evaluate surfaces the failure as an Err.
+        $this->assertTrue($overloader->supportsOverloading(Money::of(10, 'USD'), 0, '/'));
+        $this->assertTrue($overloader->evaluate(Money::of(10, 'USD'), 0, '/')->isErr());
+    }
+
+    #[Test]
     public function it_returns_err_for_unsupported_operator(): void
     {
         $overloader = new MoneyOverloader();
