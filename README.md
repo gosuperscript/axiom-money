@@ -11,7 +11,7 @@ A monetary extension for [Axiom](https://github.com/gosuperscript/axiom), provid
 
 - **Schema Types**: Type-safe monetary value handling with currency validation
 - **Money Parser**: Parse monetary values from various string formats (e.g., "EUR 100", "£50.25")
-- **Operator Overloading**: Mathematical operations on Money objects (addition, subtraction, multiplication, division, comparisons)
+- **Operator Overloading**: Mathematical operations on Money objects — addition, subtraction, and comparisons between monies, plus multiplication/division by a numeric scalar (returning an exact `RationalMoney`)
 - **Multiple Type Variants**:
   - `MonetaryType`: Standard monetary type with currency validation
   - `MinorMonetaryType`: Money from minor units (cents, pence, etc.)
@@ -140,19 +140,35 @@ $sum = $overloader->evaluate($a, $b, '+');
 $diff = $overloader->evaluate($a, $b, '-');
 // Result: EUR 50.00
 
-// Multiplication (multiplies left by the amount from right)
-$product = $overloader->evaluate($a, $b, '*');
-// Result: EUR 5000.00 (100 * 50)
+// Multiplication and division require ONE numeric operand (multiplying or dividing two
+// monies is dimensionally meaningless and is not supported). The numeric operand may be
+// on either side for multiplication; division must be Money / number.
+//
+// To preserve precision, `*` and `/` return a Brick\Money\RationalMoney (an exact rational
+// amount). Collapse it to a spendable Money with ->to($context, $roundingMode) when needed.
+use Brick\Math\RoundingMode;
+use Brick\Money\Context\DefaultContext;
 
-// Division (divides left by the amount from right)
-$quotient = $overloader->evaluate($a, $b, '/');
-// Result: EUR 2.00 (100 / 50)
+$product = $overloader->evaluate($a, 3, '*');        // RationalMoney, exactly 300
+$product = $overloader->evaluate(3, $a, '*');        // commutative
+$quotient = $overloader->evaluate($a, 3, '/');       // RationalMoney, exactly 100/3 (no rounding)
 
-// Comparisons
+// Collapse to a real Money at the boundary, choosing your rounding policy:
+$money = $quotient->unwrap()->to(new DefaultContext(), RoundingMode::HALF_UP); // EUR 33.33
+
+// Addition/subtraction: Money + Money stays Money; if either side is a RationalMoney the
+// result is a RationalMoney ("rational is contagious").
+$sum = $overloader->evaluate($a, $b, '+');           // Money: EUR 150.00
+
+// Comparisons (work across Money and RationalMoney, returning bool)
 $isEqual = $overloader->evaluate($a, $b, '==');     // false
 $isLess = $overloader->evaluate($b, $a, '<');       // true
 $isGreater = $overloader->evaluate($a, $b, '>');    // true
 ```
+
+> **Note:** `MonetaryIntervalOverloader` compares an interval against a `Money` only. A
+> `RationalMoney` produced by `*`/`/` cannot be compared against an interval directly —
+> collapse it with `->to($context, $roundingMode)` first.
 
 ### Monetary Intervals
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Superscript\Axiom\Money\Tests\Operators;
 
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -52,6 +53,15 @@ class MonetaryIntervalOverloaderTest extends TestCase
             MonetaryInterval::fromString('[EUR 1, EUR 2]'),
             Money::of(1, 'EUR'),
             'unsupported-operator',
+            false,
+        ];
+        // Documented asymmetry: a RationalMoney produced by MoneyOverloader's `/` or `*` cannot
+        // be compared against an interval (vendor MonetaryInterval accepts Money, not RationalMoney).
+        // The consumer must collapse it with ->to($context, $roundingMode) first.
+        yield 'rational money is not supported' => [
+            MonetaryInterval::fromString('[EUR 1, EUR 2]'),
+            RationalMoney::of(1, 'EUR'),
+            '>',
             false,
         ];
     }
