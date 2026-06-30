@@ -42,8 +42,7 @@ final readonly class MoneyOverloader implements OperatorOverloader
 
     /**
      * Multiplication by a numeric scalar; the money operand may be on either side. The result is
-     * an exact RationalMoney so no precision is lost — collapse it with ->to($context,
-     * $roundingMode) for a fixed-scale Money.
+     * an exact RationalMoney so no precision is lost.
      */
     private function multiply(mixed $left, mixed $right): RationalMoney
     {
@@ -53,8 +52,7 @@ final readonly class MoneyOverloader implements OperatorOverloader
     }
 
     /**
-     * Division of a money by a numeric scalar (Money / number). Returns an exact RationalMoney;
-     * collapse it with ->to($context, $roundingMode) for a fixed-scale Money.
+     * Division of a money by a numeric scalar (Money / number). Returns an exact RationalMoney.
      */
     private function divide(mixed $left, mixed $right): RationalMoney
     {
