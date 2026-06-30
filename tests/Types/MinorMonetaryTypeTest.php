@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Tests\Types;
 
+use Brick\Math\RoundingMode;
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -63,6 +65,24 @@ class MinorMonetaryTypeTest extends TestCase
             [null],
             [Money::ofMinor(100, 'USD'), 'EUR'], // Mismatching currency
         ];
+    }
+
+    #[Test]
+    public function it_coerces_a_rational_money_by_rounding_to_the_currency_scale(): void
+    {
+        // A RationalMoney is already a money value (major units), so it is collapsed via ->to(),
+        // not treated as minor units. 10/3 EUR rounds to 3.33 (HALF_UP by default).
+        $type = new MinorMonetaryType(Currency::of('EUR'));
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3);
+        $this->assertTrue($type->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('3.33', 'EUR')));
+
+        // Custom rounding mode is honored.
+        $down = new MinorMonetaryType(Currency::of('EUR'), RoundingMode::DOWN);
+        $twoThirds = RationalMoney::of(2, 'EUR')->dividedBy(3);
+        $this->assertTrue($down->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
+
+        // Currency mismatch still fails.
+        $this->assertTrue($type->coerce(RationalMoney::of(100, 'USD'))->isErr());
     }
 
     #[Test]

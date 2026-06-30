@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Context\DefaultContext;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Axiom\Exceptions\TransformValueException;
@@ -21,6 +24,8 @@ use function Superscript\Monads\Result\Ok;
  */
 final readonly class DynamicMonetaryType implements Type
 {
+    public function __construct(public RoundingMode $roundingMode = RoundingMode::HALF_UP) {}
+
     /**
      * @return Result<Option<Money>, TransformValueException>
      */
@@ -38,6 +43,12 @@ final readonly class DynamicMonetaryType implements Type
      */
     public function coerce(mixed $value): Result
     {
+        // A RationalMoney is the exact, unrounded result of an expression (e.g. `salary / 12`).
+        // The type boundary is where it becomes a concrete Money, rounded to its currency scale.
+        if ($value instanceof RationalMoney) {
+            return Ok(Some($value->to(new DefaultContext(), $this->roundingMode)));
+        }
+
         return MoneyParser::parse($value)->map(fn(Money $money) => Some($money))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
