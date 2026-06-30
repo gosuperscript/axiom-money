@@ -51,6 +51,10 @@ class MoneyOverloaderTest extends TestCase
         yield 'money * money' => [Money::of(10, 'USD'), '*', Money::of(2, 'USD')];
         yield 'money / money' => [Money::of(20, 'JPY'), '/', Money::of(2, 'JPY')];
         yield 'numeric / money' => [2, '/', Money::of(10, 'USD')];
+        yield 'non-money * numeric' => ['foo', '*', 5];
+        yield 'numeric * non-money' => [5, '*', 'foo'];
+        yield 'non-money / numeric' => ['foo', '/', 5];
+        yield 'unknown operator' => [Money::of(1, 'EUR'), '%', Money::of(1, 'EUR')];
     }
 
     #[Test]
@@ -97,6 +101,21 @@ class MoneyOverloaderTest extends TestCase
         $rational = $overloader->evaluate(Money::of(10, 'USD'), 3, '/')->unwrap();
         $this->assertInstanceOf(RationalMoney::class, $overloader->evaluate(Money::of(1, 'USD'), $rational, '+')->unwrap());
         $this->assertInstanceOf(RationalMoney::class, $overloader->evaluate($rational, Money::of(1, 'USD'), '-')->unwrap());
+    }
+
+    #[Test]
+    public function it_computes_addition_and_subtraction_with_rational_operands(): void
+    {
+        $overloader = new MoneyOverloader();
+        $half = $overloader->evaluate(Money::of(10, 'USD'), 4, '/')->unwrap(); // 2.5 USD (RationalMoney)
+
+        $sum = $overloader->evaluate($half, Money::of(1, 'USD'), '+');
+        $this->assertTrue($sum->isOk());
+        $this->assertTrue($sum->unwrap()->isEqualTo(Money::of('3.50', 'USD')));
+
+        $diff = $overloader->evaluate($half, Money::of(1, 'USD'), '-');
+        $this->assertTrue($diff->isOk());
+        $this->assertTrue($diff->unwrap()->isEqualTo(Money::of('1.50', 'USD')));
     }
 
     #[Test]

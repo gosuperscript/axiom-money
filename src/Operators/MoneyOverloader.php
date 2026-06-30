@@ -92,6 +92,9 @@ final readonly class MoneyOverloader implements OperatorOverloader
         return $operator === '+' ? $left->plus($right) : $left->minus($right);
     }
 
+    /**
+     * @param  '=='|'!='|'<'|'>'|'<='|'>='  $operator
+     */
     private function compare(mixed $left, mixed $right, string $operator): bool
     {
         instance_of(AbstractMoney::class)->assert($left);
@@ -104,7 +107,6 @@ final readonly class MoneyOverloader implements OperatorOverloader
             '>' => $left->isGreaterThan($right),
             '<=' => $left->isLessThanOrEqualTo($right),
             '>=' => $left->isGreaterThanOrEqualTo($right),
-            default => throw new \InvalidArgumentException("Unsupported operator: {$operator}"),
         };
     }
 
