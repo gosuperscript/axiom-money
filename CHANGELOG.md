@@ -17,6 +17,9 @@ All notable changes to this project will be documented in this file.
   `RationalMoney` result can chain into further expressions. Addition/subtraction follow a
   "rational is contagious" rule: `Money + Money` stays `Money`; if either operand is a
   `RationalMoney`, the result is a `RationalMoney`.
+- The numeric operand of `*`/`/` may be an `int`, `float`, or numeric string. Numeric strings are
+  passed through exactly (e.g. `$money * '1.075'` is not subject to float-precision loss), and
+  surrounding whitespace is tolerated.
 
 ### Migration
 
