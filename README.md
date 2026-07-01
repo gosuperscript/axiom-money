@@ -11,7 +11,7 @@ A monetary extension for [Axiom](https://github.com/gosuperscript/axiom), provid
 
 - **Schema Types**: Type-safe monetary value handling with currency validation
 - **Money Parser**: Parse monetary values from various string formats (e.g., "EUR 100", "£50.25")
-- **Operator Overloading**: Mathematical operations on Money objects (addition, subtraction, multiplication, division, comparisons)
+- **Operator Overloading**: Mathematical operations on Money objects — addition, subtraction, and comparisons between monies, plus multiplication/division by a numeric scalar (returning an exact `RationalMoney`)
 - **Multiple Type Variants**:
   - `MonetaryType`: Standard monetary type with currency validation
   - `MinorMonetaryType`: Money from minor units (cents, pence, etc.)
@@ -125,9 +125,9 @@ Perform mathematical operations on Money objects:
 
 ```php
 use Brick\Money\Money;
-use Superscript\Axiom\Money\Operators\MoneyOverloader;
+use Superscript\Axiom\Money\Operators\MonetaryOverloader;
 
-$overloader = new MoneyOverloader();
+$overloader = new MonetaryOverloader();
 
 $a = Money::of(100, 'EUR');
 $b = Money::of(50, 'EUR');
@@ -140,19 +140,41 @@ $sum = $overloader->evaluate($a, $b, '+');
 $diff = $overloader->evaluate($a, $b, '-');
 // Result: EUR 50.00
 
-// Multiplication (multiplies left by the amount from right)
-$product = $overloader->evaluate($a, $b, '*');
-// Result: EUR 5000.00 (100 * 50)
+// Multiplication and division require ONE numeric operand (multiplying or dividing two
+// monies is dimensionally meaningless and is not supported). The numeric operand may be
+// on either side for multiplication; division must be Money / number.
+//
+// To preserve precision, `*` and `/` return an exact Brick\Money\RationalMoney.
+$product = $overloader->evaluate($a, 3, '*');        // RationalMoney, exactly 300
+$product = $overloader->evaluate(3, $a, '*');        // commutative
+$quotient = $overloader->evaluate($a, 3, '/');       // RationalMoney, exactly 100/3 (no rounding)
 
-// Division (divides left by the amount from right)
-$quotient = $overloader->evaluate($a, $b, '/');
-// Result: EUR 2.00 (100 / 50)
+// Addition/subtraction: Money + Money stays Money; if either operand is a RationalMoney the
+// result is a RationalMoney ("rational is contagious"), so chained arithmetic never rounds mid-way.
+$sum = $overloader->evaluate($a, $b, '+');           // Money: EUR 150.00
 
-// Comparisons
+// Comparisons work across Money and RationalMoney, returning bool.
 $isEqual = $overloader->evaluate($a, $b, '==');     // false
 $isLess = $overloader->evaluate($b, $a, '<');       // true
 $isGreater = $overloader->evaluate($a, $b, '>');    // true
 ```
+
+A `RationalMoney` becomes a concrete `Money` at the **type boundary**: when it lands in a
+`MonetaryType`, `MinorMonetaryType`, or `DynamicMonetaryType` field, `coerce()` rounds it to the
+currency scale — the rounding mode is configurable on the type and defaults to
+`RoundingMode::HALF_UP`, so a `RationalMoney` never leaves the type system. If you consume a
+`*`/`/` result directly (outside a type), collapse it yourself:
+
+```php
+use Brick\Math\RoundingMode;
+use Brick\Money\Context\DefaultContext;
+
+$money = $quotient->unwrap()->to(new DefaultContext(), RoundingMode::HALF_UP); // EUR 33.33
+```
+
+> **Note:** `MonetaryIntervalOverloader` compares an interval against a `Money` only. A
+> `RationalMoney` produced by `*`/`/` cannot be compared against an interval directly —
+> collapse it to a `Money` first.
 
 ### Monetary Intervals
 
