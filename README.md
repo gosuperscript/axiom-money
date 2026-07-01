@@ -123,36 +123,44 @@ $money = $dynamicType->coerce('€50.25')->unwrap()->unwrap();
 
 Perform mathematical operations on Money objects:
 
+Register both `MoneyOverloader` (for `Money` operands) and `RationalMoneyOverloader` (for
+chaining, where an operand is itself a `RationalMoney`):
+
 ```php
 use Brick\Money\Money;
 use Superscript\Axiom\Money\Operators\MoneyOverloader;
+use Superscript\Axiom\Money\Operators\RationalMoneyOverloader;
 
 $overloader = new MoneyOverloader();
 
 $a = Money::of(100, 'EUR');
 $b = Money::of(50, 'EUR');
 
-// Addition
-$sum = $overloader->evaluate($a, $b, '+');
-// Result: EUR 150.00
+// Addition / subtraction of two monies stays a Money
+$sum = $overloader->evaluate($a, $b, '+');   // Money: EUR 150.00
+$diff = $overloader->evaluate($a, $b, '-');  // Money: EUR 50.00
 
-// Subtraction
-$diff = $overloader->evaluate($a, $b, '-');
-// Result: EUR 50.00
+// Multiplication and division require ONE numeric operand (multiplying or dividing two monies
+// is dimensionally meaningless). To preserve precision they return an exact RationalMoney.
+$product = $overloader->evaluate($a, 3, '*');   // RationalMoney, exactly 300
+$product = $overloader->evaluate(3, $a, '*');   // commutative
+$quotient = $overloader->evaluate($a, 3, '/');  // RationalMoney, exactly 100/3 (no rounding)
 
-// Multiplication (multiplies left by the amount from right)
-$product = $overloader->evaluate($a, $b, '*');
-// Result: EUR 5000.00 (100 * 50)
+// A RationalMoney chains into further expressions via RationalMoneyOverloader
+// (rational is contagious):
+$rational = new RationalMoneyOverloader();
+$monthlyPlusBonus = $rational->evaluate($quotient->unwrap(), $b, '+'); // RationalMoney
 
-// Division (divides left by the amount from right)
-$quotient = $overloader->evaluate($a, $b, '/');
-// Result: EUR 2.00 (100 / 50)
-
-// Comparisons
+// Comparisons work across Money and RationalMoney, returning bool
 $isEqual = $overloader->evaluate($a, $b, '==');     // false
 $isLess = $overloader->evaluate($b, $a, '<');       // true
 $isGreater = $overloader->evaluate($a, $b, '>');    // true
 ```
+
+A `RationalMoney` is an exact, unrounded intermediate. It becomes a concrete `Money` when it
+lands in a `DynamicMonetaryType` field, which rounds it to the currency scale (rounding mode
+configurable on the type, default `HALF_UP`). `MonetaryType` and `MinorMonetaryType` accept
+only concrete `Money` values.
 
 ### Monetary Intervals
 

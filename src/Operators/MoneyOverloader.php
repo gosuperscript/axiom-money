@@ -4,39 +4,36 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Operators;
 
+use Brick\Money\AbstractMoney;
 use Brick\Money\Money;
-use Superscript\Axiom\Operators\OperatorOverloader;
-use Superscript\Monads\Result\Result;
 
 use function Psl\Type\instance_of;
-use function Superscript\Monads\Result\attempt;
 
-final readonly class MoneyOverloader implements OperatorOverloader
+/**
+ * Overloads arithmetic and comparison operators on {@see Money} operands.
+ *
+ * Addition and subtraction of two monies stay a Money; multiplication and division require exactly
+ * one numeric operand (multiplying or dividing two monies is dimensionally meaningless) and return
+ * an exact {@see \Brick\Money\RationalMoney} so precision is preserved. A RationalMoney operand is
+ * handled by {@see RationalMoneyOverloader}, not here.
+ */
+final readonly class MoneyOverloader extends AbstractMoneyOverloader
 {
     public function supportsOverloading(mixed $left, mixed $right, string $operator): bool
     {
-        return $left instanceof Money && $right instanceof Money && in_array($operator, ['+', '-', '*', '/', '==', '!=', '<', '>', '<=', '>='], true);
+        return match ($operator) {
+            '+', '-', '==', '!=', '<', '>', '<=', '>=' => $left instanceof Money && $right instanceof Money,
+            '*' => ($left instanceof Money && is_numeric($right)) || (is_numeric($left) && $right instanceof Money),
+            '/' => $left instanceof Money && is_numeric($right),
+            default => false,
+        };
     }
 
-    public function evaluate(mixed $left, mixed $right, string $operator): Result
+    protected function addOrSubtract(mixed $left, mixed $right, string $operator): AbstractMoney
     {
-        return attempt(function () use ($left, $right, $operator) {
-            instance_of(Money::class)->assert($left);
-            instance_of(Money::class)->assert($right);
+        $left = instance_of(Money::class)->coerce($left);
+        $right = instance_of(Money::class)->coerce($right);
 
-            return match ($operator) {
-                '+' => $left->plus($right),
-                '-' => $left->minus($right),
-                '*' => $left->multipliedBy($right->getAmount()->toFloat()),
-                '/' => $left->dividedBy($right->getAmount()->toFloat()),
-                '==' => $left->isEqualTo($right),
-                '!=' => !$left->isEqualTo($right),
-                '<' => $left->isLessThan($right),
-                '>' => $left->isGreaterThan($right),
-                '<=' => $left->isLessThanOrEqualTo($right),
-                '>=' => $left->isGreaterThanOrEqualTo($right),
-                default => throw new \InvalidArgumentException("Unsupported operator: {$operator}"),
-            };
-        });
+        return $operator === '+' ? $left->plus($right) : $left->minus($right);
     }
 }
