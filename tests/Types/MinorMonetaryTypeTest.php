@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Tests\Types;
 
+use Brick\Math\RoundingMode;
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -66,6 +68,34 @@ class MinorMonetaryTypeTest extends TestCase
     }
 
     #[Test]
+    public function it_rounds_a_rational_money_to_the_currency_scale_on_coerce(): void
+    {
+        // A RationalMoney is already a money value (major units), so it is collapsed via ->to(),
+        // not treated as minor units. 10/3 EUR rounds to 3.33 (HALF_UP by default).
+        $type = new MinorMonetaryType(Currency::of('EUR'));
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3);
+
+        $this->assertTrue($type->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('3.33', 'EUR')));
+    }
+
+    #[Test]
+    public function it_honors_a_custom_rounding_mode_when_coercing_rational_money(): void
+    {
+        $down = new MinorMonetaryType(Currency::of('EUR'), RoundingMode::DOWN);
+        $twoThirds = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
+
+        $this->assertTrue($down->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
+    }
+
+    #[Test]
+    public function it_returns_err_when_coercing_rational_money_with_wrong_currency(): void
+    {
+        $type = new MinorMonetaryType(Currency::of('EUR'));
+
+        $this->assertTrue($type->coerce(RationalMoney::of(100, 'USD'))->isErr());
+    }
+
+    #[Test]
     public function it_can_compare_two_values(): void
     {
         $type = new MinorMonetaryType(Currency::of('EUR'));
@@ -113,6 +143,15 @@ class MinorMonetaryTypeTest extends TestCase
     {
         $type = new MinorMonetaryType(Currency::of('EUR'));
         $result = $type->assert($value = Money::ofMinor(100, 'USD'));
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
+    }
+
+    #[Test]
+    public function it_returns_err_when_asserting_a_rational_money(): void
+    {
+        // assert() is strict: a RationalMoney is a coercible input, not an already-valid Money.
+        $type = new MinorMonetaryType(Currency::of('EUR'));
+        $result = $type->assert($value = RationalMoney::of(1, 'EUR'));
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 }

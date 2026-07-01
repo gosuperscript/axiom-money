@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Tests\Types;
 
+use Brick\Math\RoundingMode;
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -39,7 +41,38 @@ class MonetaryTypeTest extends TestCase
             ['1234.567', 'IQD', Money::of(1234.567, 'IQD')],
             ['1234.5678', 'UYW', Money::of(1234.5678, 'UYW')],
             [Money::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
+            // An exactly-representable RationalMoney coerces without rounding.
+            [RationalMoney::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
         ];
+    }
+
+    #[Test]
+    public function it_rounds_a_rational_money_to_the_currency_scale_on_coerce(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3); // 10/3, non-terminating
+
+        // The type boundary collapses the exact rational to a concrete Money (HALF_UP by default).
+        $this->assertTrue($type->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('3.33', 'EUR')));
+    }
+
+    #[Test]
+    public function it_honors_a_custom_rounding_mode_when_coercing_rational_money(): void
+    {
+        $rational = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
+
+        $halfUp = new MonetaryType(Currency::of('EUR'), RoundingMode::HALF_UP);
+        $this->assertTrue($halfUp->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('0.67', 'EUR')));
+
+        $down = new MonetaryType(Currency::of('EUR'), RoundingMode::DOWN);
+        $this->assertTrue($down->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
+    }
+
+    #[Test]
+    public function it_returns_err_when_coercing_rational_money_with_wrong_currency(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $this->assertTrue($type->coerce(RationalMoney::of(100, 'USD'))->isErr());
     }
 
     #[DataProvider('errorProvider')]
@@ -120,6 +153,16 @@ class MonetaryTypeTest extends TestCase
     {
         $type = new MonetaryType(Currency::of('EUR'));
         $result = $type->assert($value = Money::of(100, 'USD'));
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
+    }
+
+    #[Test]
+    public function it_returns_err_when_asserting_a_rational_money(): void
+    {
+        // assert() is the strict "already a Money?" check; a RationalMoney is a coercible input,
+        // not an already-valid Money, so it must go through coerce() (which rounds it) instead.
+        $type = new MonetaryType(Currency::of('EUR'));
+        $result = $type->assert($value = RationalMoney::of(1, 'EUR'));
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 }
