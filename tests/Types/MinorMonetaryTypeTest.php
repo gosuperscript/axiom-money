@@ -6,6 +6,7 @@ namespace Superscript\Axiom\Money\Tests\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -63,6 +64,22 @@ class MinorMonetaryTypeTest extends TestCase
             [null],
             [Money::ofMinor(100, 'USD'), 'EUR'], // Mismatching currency
         ];
+    }
+
+    #[Test]
+    public function it_accepts_rational_money_alongside_money_without_rounding(): void
+    {
+        // A RationalMoney is an exact money value and is passed through unchanged, not treated as
+        // minor units. Rounding to a fixed-scale amount is deferred to the output boundary.
+        $type = new MinorMonetaryType(Currency::of('EUR'));
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3);
+
+        $coerced = $type->coerce($rational)->unwrap()->unwrap();
+        $this->assertInstanceOf(RationalMoney::class, $coerced);
+        $this->assertTrue($coerced->isEqualTo($rational));
+        $this->assertTrue($type->assert($rational)->unwrap()->unwrap()->isEqualTo($rational));
+
+        $this->assertTrue($type->coerce(RationalMoney::of(100, 'USD'))->isErr());
     }
 
     #[Test]

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Brick\Money\AbstractMoney;
 use Brick\Money\Money;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
@@ -17,16 +18,16 @@ use function Superscript\Monads\Result\Err;
 use function Superscript\Monads\Result\Ok;
 
 /**
- * @implements Type<Money>
+ * @implements Type<AbstractMoney>
  */
 final readonly class DynamicMonetaryType implements Type
 {
     /**
-     * @return Result<Option<Money>, TransformValueException>
+     * @return Result<Option<AbstractMoney>, TransformValueException>
      */
     public function assert(mixed $value): Result
     {
-        if (!$value instanceof Money) {
+        if (!$value instanceof AbstractMoney) {
             return Err(new TransformValueException(type: 'money', value: $value));
         }
 
@@ -34,10 +35,17 @@ final readonly class DynamicMonetaryType implements Type
     }
 
     /**
-     * @return Result<Option<Money>, TransformValueException>
+     * @return Result<Option<AbstractMoney>, TransformValueException>
      */
     public function coerce(mixed $value): Result
     {
+        // A RationalMoney (the exact, unrounded result of an expression such as `salary / 12`) is
+        // accepted alongside Money and passed through unchanged; rounding to a fixed-scale amount
+        // is deferred to the output boundary (e.g. format()), not forced here.
+        if ($value instanceof AbstractMoney) {
+            return Ok(Some($value));
+        }
+
         return MoneyParser::parse($value)->map(fn(Money $money) => Some($money))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }

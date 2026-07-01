@@ -6,6 +6,7 @@ namespace Superscript\Axiom\Money\Tests\Types;
 
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -70,6 +71,29 @@ class MonetaryTypeTest extends TestCase
             [null],
             [Money::of(100, 'USD'), 'EUR'], // Different currency
         ];
+    }
+
+    #[Test]
+    public function it_accepts_rational_money_alongside_money_without_rounding(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3); // 10/3, non-terminating
+
+        // coerce/assert pass the RationalMoney through unchanged (no rounding to a fixed-scale Money).
+        $coerced = $type->coerce($rational)->unwrap()->unwrap();
+        $this->assertInstanceOf(RationalMoney::class, $coerced);
+        $this->assertTrue($coerced->isEqualTo($rational));
+        $this->assertTrue($type->assert($rational)->unwrap()->unwrap()->isEqualTo($rational));
+
+        // format() is the boundary that renders it as a rounded, fixed-scale display string.
+        $this->assertSame('€3.33', $type->format($rational));
+    }
+
+    #[Test]
+    public function it_returns_err_when_coercing_rational_money_with_wrong_currency(): void
+    {
+        $type = new MonetaryType(Currency::of('EUR'));
+        $this->assertTrue($type->coerce(RationalMoney::of(100, 'USD'))->isErr());
     }
 
     #[Test]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Superscript\Axiom\Money\Tests\Types;
 
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -44,6 +45,21 @@ class DynamicMonetaryTypeTest extends TestCase
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [\'foobar\']', $result->unwrapErr()->getMessage());
 
+    }
+
+    #[Test]
+    public function it_accepts_rational_money_alongside_money_without_rounding(): void
+    {
+        $type = new DynamicMonetaryType();
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3);
+
+        $coerced = $type->coerce($rational)->unwrap()->unwrap();
+        $this->assertInstanceOf(RationalMoney::class, $coerced);
+        $this->assertTrue($coerced->isEqualTo($rational));
+        $this->assertTrue($type->assert($rational)->unwrap()->unwrap()->isEqualTo($rational));
+
+        // format() renders it as a rounded, fixed-scale display string at the boundary.
+        $this->assertSame('€3.33', $type->format($rational));
     }
 
     #[DataProvider('compareProvider')]

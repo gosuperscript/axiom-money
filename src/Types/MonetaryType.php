@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Brick\Money\AbstractMoney;
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
@@ -23,18 +24,18 @@ use function Superscript\Monads\Result\Err;
 use function Superscript\Monads\Result\Ok;
 
 /**
- * @implements Type<Money>
+ * @implements Type<AbstractMoney>
  */
 final readonly class MonetaryType implements Type
 {
     public function __construct(public Currency $currency) {}
 
     /**
-     * @return Result<Option<Money>, TransformValueException>
+     * @return Result<Option<AbstractMoney>, TransformValueException>
      */
     public function assert(mixed $value): Result
     {
-        if (!$value instanceof Money) {
+        if (!$value instanceof AbstractMoney) {
             return Err(new TransformValueException(type: 'money', value: $value));
         }
 
@@ -46,12 +47,15 @@ final readonly class MonetaryType implements Type
     }
 
     /**
-     * @return Result<Option<Money>, TransformValueException>
+     * @return Result<Option<AbstractMoney>, TransformValueException>
      */
     public function coerce(mixed $value): Result
     {
+        // A RationalMoney (the exact, unrounded result of an expression such as `salary / 12`) is
+        // accepted alongside Money and passed through unchanged; rounding to a fixed-scale amount
+        // is deferred to the output boundary (e.g. format()), not forced here.
         return (match (true) {
-            $value instanceof Money => $value->getCurrency()->is($this->currency)
+            $value instanceof AbstractMoney => $value->getCurrency()->is($this->currency)
                 ? Ok($value)
                 : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->getCurrency()->getCurrencyCode()))),
             default => attempt(function () use ($value) {
@@ -59,7 +63,7 @@ final readonly class MonetaryType implements Type
                 return Money::of($value, $this->currency);
             }),
         })
-            ->map(fn(Money $money) => Some($money))
+            ->map(fn(AbstractMoney $money) => Some($money))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
