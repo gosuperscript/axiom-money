@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Tests\Types;
 
+use Brick\Math\RoundingMode;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -44,6 +46,23 @@ class DynamicMonetaryTypeTest extends TestCase
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
         $this->assertEquals('Unable to transform into [money] from [\'foobar\']', $result->unwrapErr()->getMessage());
 
+    }
+
+    #[Test]
+    public function it_rounds_a_rational_money_to_its_currency_scale_on_coerce(): void
+    {
+        // No fixed currency: the RationalMoney carries its own. 10/3 EUR rounds to 3.33 (HALF_UP).
+        $rational = RationalMoney::of(10, 'EUR')->dividedBy(3);
+
+        $this->assertTrue((new DynamicMonetaryType())->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('3.33', 'EUR')));
+    }
+
+    #[Test]
+    public function it_honors_a_custom_rounding_mode_when_coercing_rational_money(): void
+    {
+        $twoThirds = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
+
+        $this->assertTrue((new DynamicMonetaryType(RoundingMode::DOWN))->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
     }
 
     #[DataProvider('compareProvider')]

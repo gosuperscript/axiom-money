@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Context\DefaultContext;
 use Brick\Money\Currency;
 use Brick\Money\Money;
+use Brick\Money\RationalMoney;
 use InvalidArgumentException;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
@@ -27,7 +30,7 @@ use function Superscript\Monads\Result\Ok;
  */
 final readonly class MonetaryType implements Type
 {
-    public function __construct(public Currency $currency) {}
+    public function __construct(public Currency $currency, public RoundingMode $roundingMode = RoundingMode::HALF_UP) {}
 
     /**
      * @return Result<Option<Money>, TransformValueException>
@@ -50,13 +53,17 @@ final readonly class MonetaryType implements Type
      */
     public function coerce(mixed $value): Result
     {
+        $candidate = $value instanceof RationalMoney
+            ? $value->to(new DefaultContext(), $this->roundingMode)
+            : $value;
+
         return (match (true) {
-            $value instanceof Money => $value->getCurrency()->is($this->currency)
-                ? Ok($value)
-                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->getCurrency()->getCurrencyCode()))),
-            default => attempt(function () use ($value) {
-                union(string(), float(), int())->assert($value);
-                return Money::of($value, $this->currency);
+            $candidate instanceof Money => $candidate->getCurrency()->is($this->currency)
+                ? Ok($candidate)
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $candidate->getCurrency()->getCurrencyCode()))),
+            default => attempt(function () use ($candidate) {
+                union(string(), float(), int())->assert($candidate);
+                return Money::of($candidate, $this->currency);
             }),
         })
             ->map(fn(Money $money) => Some($money))
