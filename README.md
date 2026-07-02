@@ -176,6 +176,23 @@ $money = $quotient->unwrap()->to(new DefaultContext(), RoundingMode::HALF_UP); /
 > `RationalMoney` produced by `*`/`/` cannot be compared against an interval directly —
 > collapse it to a `Money` first.
 
+### Allocation
+
+`Allocation` proportionally allocates or equally splits a `Money`, delegating to brick/money's
+exact minor-unit algorithm: any remainder is distributed over the earliest parts, so the parts
+always sum to the original amount — no penny drift.
+
+```php
+use Brick\Money\Money;
+use Superscript\Axiom\Money\Allocation;
+
+Allocation::allocate(Money::of('25.00', 'GBP'), 5000, 4000)->unwrap(); // [GBP 13.89, GBP 11.11]
+Allocation::split(Money::of('100.00', 'GBP'), 3)->unwrap();            // [GBP 33.34, GBP 33.33, GBP 33.33]
+```
+
+Both return a `Result`; invalid input (no ratios, all-zero ratios, a negative ratio, or fewer
+than one part) is an `Err(InvalidArgumentException)`.
+
 ### Monetary Intervals
 
 Work with ranges of monetary values:
