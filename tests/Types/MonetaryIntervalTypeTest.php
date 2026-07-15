@@ -16,6 +16,8 @@ use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryIntervalType;
+use Superscript\Axiom\Types\Shapes\LiteralShape;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(MonetaryIntervalType::class)]
 #[UsesClass(MoneyParser::class)]
@@ -63,23 +65,14 @@ class MonetaryIntervalTypeTest extends TestCase
         $this->assertEquals(new TransformValueException(type: 'monetary-interval', value: '[USD 1.00,USD 2.00]'), $result->unwrapErr());
     }
 
-    #[DataProvider('compareProvider')]
     #[Test]
-    public function it_can_compare_two_values(string $a, string $b, bool $expected): void
+    public function it_projects_to_an_opaque_monetary_interval_shape_parameterized_by_currency(): void
     {
         $type = new MonetaryIntervalType(Currency::of('EUR'));
-        $a = $type->coerce($a)->unwrap()->unwrap();
-        $b = $type->coerce($b)->unwrap()->unwrap();
-        $this->assertSame($expected, $type->compare($a, $b));
-    }
-
-    public static function compareProvider(): array
-    {
-        return [
-            ['[1,2]', '[1,2]', true],
-            ['(1,2)', '(1,2)', true],
-            ['[1,2]', '(1,2)', false],
-        ];
+        $this->assertEquals(
+            new OpaqueShape('monetary-interval', ['currency' => new LiteralShape('EUR')]),
+            $type->shape(),
+        );
     }
 
     #[DataProvider('formatProvider')]

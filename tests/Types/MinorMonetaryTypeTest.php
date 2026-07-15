@@ -16,6 +16,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MinorMonetaryType;
+use Superscript\Axiom\Types\Shapes\LiteralShape;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(MinorMonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
@@ -96,12 +98,13 @@ class MinorMonetaryTypeTest extends TestCase
     }
 
     #[Test]
-    public function it_can_compare_two_values(): void
+    public function it_projects_to_the_same_opaque_money_shape_as_the_major_type(): void
     {
         $type = new MinorMonetaryType(Currency::of('EUR'));
-        $a = Money::ofMinor(100, 'EUR');
-        $b = Money::ofMinor(100, 'EUR');
-        $this->assertSame(true, $type->compare($a, $b));
+        $this->assertEquals(
+            new OpaqueShape('money', ['currency' => new LiteralShape('EUR')]),
+            $type->shape(),
+        );
     }
 
     #[DataProvider('formatProvider')]

@@ -16,6 +16,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryType;
+use Superscript\Axiom\Types\Shapes\LiteralShape;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(MonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
@@ -106,12 +108,13 @@ class MonetaryTypeTest extends TestCase
     }
 
     #[Test]
-    public function it_can_compare_two_values(): void
+    public function it_projects_to_an_opaque_money_shape_parameterized_by_currency(): void
     {
         $type = new MonetaryType(Currency::of('EUR'));
-        $a = Money::of(100, 'EUR');
-        $b = Money::of(100, 'EUR');
-        $this->assertSame(true, $type->compare($a, $b));
+        $this->assertEquals(
+            new OpaqueShape('money', ['currency' => new LiteralShape('EUR')]),
+            $type->shape(),
+        );
     }
 
     #[DataProvider('formatProvider')]

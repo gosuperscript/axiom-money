@@ -12,6 +12,8 @@ use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
+use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
 use function Psl\Type\non_empty_string;
@@ -51,15 +53,23 @@ final readonly class DynamicMonetaryType implements Type
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
-    public function compare(mixed $a, mixed $b): bool
-    {
-        return $a->isAmountAndCurrencyEqualTo($b);
-    }
-
     public function format(mixed $value): string
     {
         $formatter = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
         $result = $formatter->formatCurrency($value->getAmount()->toFloat(), $value->getCurrency()->getCurrencyCode());
         return non_empty_string()->assert($result);
+    }
+
+    /**
+     * An opaque `money` with no currency parameter: it admits any currency
+     * at the boundary, so its currency is not statically known. That makes
+     * it a coercion/boundary type only — it is deliberately *not* assignable
+     * to the currency-parameterized `Money<C>` the arithmetic and comparison
+     * rules resolve for (opaque relation requires matching parameter lists),
+     * so declare a concrete {@see MonetaryType} where you need operators.
+     */
+    public function shape(): Shape
+    {
+        return new OpaqueShape('money');
     }
 }

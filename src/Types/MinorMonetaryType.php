@@ -13,6 +13,9 @@ use InvalidArgumentException;
 use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Types\Shapes\LiteralShape;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
+use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
 use function Psl\Type\float;
@@ -70,15 +73,23 @@ final readonly class MinorMonetaryType implements Type
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
-    public function compare(mixed $a, mixed $b): bool
-    {
-        return $a->isAmountAndCurrencyEqualTo($b);
-    }
-
     public function format(mixed $value): string
     {
         $formatter = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
         $result = $formatter->formatCurrency($value->getAmount()->toFloat(), $value->getCurrency()->getCurrencyCode());
         return non_empty_string()->assert($result);
+    }
+
+    /**
+     * The same opaque `money` identity as {@see MonetaryType}: the two
+     * differ only in how they read raw input at the boundary (minor units
+     * vs. major), and a value of either is the same Money of the same
+     * currency, so they share every operator rule.
+     */
+    public function shape(): Shape
+    {
+        return new OpaqueShape('money', [
+            'currency' => new LiteralShape($this->currency->getCurrencyCode()),
+        ]);
     }
 }
