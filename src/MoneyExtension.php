@@ -65,60 +65,60 @@ final class MoneyExtension extends Extension
             $interval = new MonetaryIntervalType(Currency::of($code));
 
             // Addition and subtraction: same currency in, same currency out.
-            $rules[] = Operator::infix('+')->signature($money, $money)->returns($money)
-                ->evaluate(fn(Money $left, Money $right) => $left->plus($right));
-            $rules[] = Operator::infix('-')->signature($money, $money)->returns($money)
-                ->evaluate(fn(Money $left, Money $right) => $left->minus($right));
+            $rules[] = Operator::infix('+')->takes($money, $money)->returns($money)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->plus($right));
+            $rules[] = Operator::infix('-')->takes($money, $money)->returns($money)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->minus($right));
 
             // Scalar multiplication (either order) and division: exact in the
             // rational domain, rounded back to a Money of the same currency.
-            $rules[] = Operator::infix('*')->signature($money, $number)->returns($money)
-                ->evaluate(fn(Money $left, int|float $right) => $this->scale($left, $right));
-            $rules[] = Operator::infix('*')->signature($number, $money)->returns($money)
-                ->evaluate(fn(int|float $left, Money $right) => $this->scale($right, $left));
-            $rules[] = Operator::infix('/')->signature($money, $number)->returns($money)
-                ->evaluate(fn(Money $left, int|float $right) => attempt(
+            $rules[] = Operator::infix('*')->takes($money, $number)->returns($money)
+                ->evaluatesWith(fn(Money $left, int|float $right) => $this->scale($left, $right));
+            $rules[] = Operator::infix('*')->takes($number, $money)->returns($money)
+                ->evaluatesWith(fn(int|float $left, Money $right) => $this->scale($right, $left));
+            $rules[] = Operator::infix('/')->takes($money, $number)->returns($money)
+                ->evaluatesWith(fn(Money $left, int|float $right) => attempt(
                     fn() => $left->toRational()->dividedBy($right)->to(new DefaultContext(), $this->roundingMode),
                 ));
 
             // Ordering: same currency.
-            $rules[] = Operator::infix('<')->signature($money, $money)->returns($boolean)
-                ->evaluate(fn(Money $left, Money $right) => $left->isLessThan($right));
-            $rules[] = Operator::infix('<=')->signature($money, $money)->returns($boolean)
-                ->evaluate(fn(Money $left, Money $right) => $left->isLessThanOrEqualTo($right));
-            $rules[] = Operator::infix('>')->signature($money, $money)->returns($boolean)
-                ->evaluate(fn(Money $left, Money $right) => $left->isGreaterThan($right));
-            $rules[] = Operator::infix('>=')->signature($money, $money)->returns($boolean)
-                ->evaluate(fn(Money $left, Money $right) => $left->isGreaterThanOrEqualTo($right));
+            $rules[] = Operator::infix('<')->takes($money, $money)->returns($boolean)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->isLessThan($right));
+            $rules[] = Operator::infix('<=')->takes($money, $money)->returns($boolean)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->isLessThanOrEqualTo($right));
+            $rules[] = Operator::infix('>')->takes($money, $money)->returns($boolean)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->isGreaterThan($right));
+            $rules[] = Operator::infix('>=')->takes($money, $money)->returns($boolean)
+                ->evaluatesWith(fn(Money $left, Money $right) => $left->isGreaterThanOrEqualTo($right));
 
             // Equality: Brick's amount-and-currency comparison, not identity.
             foreach (['=', '==', '==='] as $operator) {
-                $rules[] = Operator::infix($operator)->signature($money, $money)->returns($boolean)
-                    ->evaluate(fn(Money $left, Money $right) => $left->isAmountAndCurrencyEqualTo($right));
+                $rules[] = Operator::infix($operator)->takes($money, $money)->returns($boolean)
+                    ->evaluatesWith(fn(Money $left, Money $right) => $left->isAmountAndCurrencyEqualTo($right));
             }
             foreach (['!=', '!=='] as $operator) {
-                $rules[] = Operator::infix($operator)->signature($money, $money)->returns($boolean)
-                    ->evaluate(fn(Money $left, Money $right) => !$left->isAmountAndCurrencyEqualTo($right));
+                $rules[] = Operator::infix($operator)->takes($money, $money)->returns($boolean)
+                    ->evaluatesWith(fn(Money $left, Money $right) => !$left->isAmountAndCurrencyEqualTo($right));
             }
 
             // A monetary interval compared against a money of its currency.
-            $rules[] = Operator::infix('<')->signature($interval, $money)->returns($boolean)
-                ->evaluate(fn(MonetaryInterval $left, Money $right) => $left->isLessThan($right));
-            $rules[] = Operator::infix('<=')->signature($interval, $money)->returns($boolean)
-                ->evaluate(fn(MonetaryInterval $left, Money $right) => $left->isLessThanOrEqualTo($right));
-            $rules[] = Operator::infix('>')->signature($interval, $money)->returns($boolean)
-                ->evaluate(fn(MonetaryInterval $left, Money $right) => $left->isGreaterThan($right));
-            $rules[] = Operator::infix('>=')->signature($interval, $money)->returns($boolean)
-                ->evaluate(fn(MonetaryInterval $left, Money $right) => $left->isGreaterThanOrEqualTo($right));
+            $rules[] = Operator::infix('<')->takes($interval, $money)->returns($boolean)
+                ->evaluatesWith(fn(MonetaryInterval $left, Money $right) => $left->isLessThan($right));
+            $rules[] = Operator::infix('<=')->takes($interval, $money)->returns($boolean)
+                ->evaluatesWith(fn(MonetaryInterval $left, Money $right) => $left->isLessThanOrEqualTo($right));
+            $rules[] = Operator::infix('>')->takes($interval, $money)->returns($boolean)
+                ->evaluatesWith(fn(MonetaryInterval $left, Money $right) => $left->isGreaterThan($right));
+            $rules[] = Operator::infix('>=')->takes($interval, $money)->returns($boolean)
+                ->evaluatesWith(fn(MonetaryInterval $left, Money $right) => $left->isGreaterThanOrEqualTo($right));
 
             // Equality between two monetary intervals of the same currency.
             foreach (['=', '==', '==='] as $operator) {
-                $rules[] = Operator::infix($operator)->signature($interval, $interval)->returns($boolean)
-                    ->evaluate(fn(MonetaryInterval $left, MonetaryInterval $right) => $left->isEqualTo($right));
+                $rules[] = Operator::infix($operator)->takes($interval, $interval)->returns($boolean)
+                    ->evaluatesWith(fn(MonetaryInterval $left, MonetaryInterval $right) => $left->isEqualTo($right));
             }
             foreach (['!=', '!=='] as $operator) {
-                $rules[] = Operator::infix($operator)->signature($interval, $interval)->returns($boolean)
-                    ->evaluate(fn(MonetaryInterval $left, MonetaryInterval $right) => !$left->isEqualTo($right));
+                $rules[] = Operator::infix($operator)->takes($interval, $interval)->returns($boolean)
+                    ->evaluatesWith(fn(MonetaryInterval $left, MonetaryInterval $right) => !$left->isEqualTo($right));
             }
         }
 
