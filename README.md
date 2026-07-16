@@ -3,19 +3,17 @@
 [![Tests](https://github.com/gosuperscript/axiom-money/workflows/Tests/badge.svg)](https://github.com/gosuperscript/axiom-money/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A monetary extension for [Axiom](https://github.com/gosuperscript/axiom), providing schema types, parsers, and operators for monetary values with strong type safety and currency validation.
-
-**Note:** This library extends [Axiom](https://github.com/gosuperscript/axiom) (built on [gosuperscript/schema](https://github.com/gosuperscript/schema)) with monetary value support.
+A monetary extension for [Axiom](https://github.com/gosuperscript/axiom), providing schema types, a parser, and operator rules for monetary values with strong type safety and currency validation.
 
 ## Features
 
 - **Schema Types**: Type-safe monetary value handling with currency validation
 - **Money Parser**: Parse monetary values from various string formats (e.g., "EUR 100", "£50.25")
-- **Operator Overloading**: Mathematical operations on Money objects — addition, subtraction, and comparisons between monies, plus multiplication/division by a numeric scalar (returning an exact `RationalMoney`)
+- **Operator rules**: Addition, subtraction, comparison and equality between monies of the same currency, plus multiplication/division by a numeric scalar — resolved and type-checked at compile time, declared per currency by a `MoneyExtension`
 - **Multiple Type Variants**:
   - `MonetaryType`: Standard monetary type with currency validation
   - `MinorMonetaryType`: Money from minor units (cents, pence, etc.)
-  - `DynamicMonetaryType`: Flexible parsing that auto-detects currency
+  - `DynamicMonetaryType`: Flexible parsing that auto-detects currency (boundary type only)
   - `MonetaryIntervalType`: Intervals of monetary values
 - **Monetary Intervals**: Support for ranges of monetary values
 
@@ -57,6 +55,8 @@ $formatted = $eurType->format(Money::of(100.50, 'EUR'));
 // Result: "€100.50"
 ```
 
+Every money type projects into Axiom's shape algebra as an opaque `money` identity parameterized by its currency (`Money<'EUR'>`). `Money<'EUR'>` fills a `Money<'EUR' | 'USD'>` slot and shares no values with `Money<'USD'>` — all without a single core relation rule mentioning money.
+
 ### Money Parser
 
 Parse money from various string formats:
@@ -72,10 +72,6 @@ $money = $result->unwrap(); // Money object: EUR 100
 // Parse from currency symbol format
 $result = MoneyParser::parse('£50.25');
 $money = $result->unwrap(); // Money object: GBP 50.25
-
-// Parse from "CURRENCY AMOUNT" format
-$result = MoneyParser::parse('USD 1000.50');
-$money = $result->unwrap(); // Money object: USD 1000.50
 
 // Already a Money object? Just returns it
 $existing = Money::of(100, 'EUR');
@@ -96,11 +92,9 @@ $gbpType = new MinorMonetaryType(Currency::of('GBP'));
 // Coerce from minor units (100 pence = £1.00)
 $money = $gbpType->coerce(100)->unwrap()->unwrap();
 // Result: Money object with GBP 1.00
-
-// Coerce from string of minor units
-$money = $gbpType->coerce('2550')->unwrap()->unwrap();
-// Result: Money object with GBP 25.50
 ```
+
+`MinorMonetaryType` projects to the *same* opaque `money<currency>` shape as `MonetaryType`: the two differ only in how they read raw input at the boundary, and a value of either is the same `Money`, so both resolve the same operator rules.
 
 ### Dynamic Monetary Type
 
@@ -111,70 +105,47 @@ use Superscript\Axiom\Money\Types\DynamicMonetaryType;
 
 $dynamicType = new DynamicMonetaryType();
 
-// Automatically detects currency
 $money = $dynamicType->coerce('USD 100')->unwrap()->unwrap();
 // Result: Money object with USD 100
-
-$money = $dynamicType->coerce('€50.25')->unwrap()->unwrap();
-// Result: Money object with EUR 50.25
 ```
 
-### Money Operations
+`DynamicMonetaryType` admits any currency at the boundary, so its currency is *not* statically known — it projects to an opaque `money` with **no** currency parameter. That makes it a coercion/boundary type only: it is deliberately not assignable to the currency-parameterized `Money<C>` the operator rules resolve for. Declare a concrete `MonetaryType` where you need arithmetic or comparison.
 
-Perform mathematical operations on Money objects:
+### Operator rules — the `MoneyExtension`
+
+Money's typing is *parameterized* by currency, and a signature's return type is fixed, so the rules are declared by **enumeration over the host's configured currencies**. Compose the extension onto the core dialect and hand it to an expression; the compiler resolves and type-checks every operator, and the compiled `Program` runs what it resolved with no runtime dispatch.
 
 ```php
 use Brick\Money\Money;
-use Superscript\Axiom\Money\Operators\MonetaryOverloader;
+use Superscript\Axiom\Dialect;
+use Superscript\Axiom\Expression;
+use Superscript\Axiom\Money\MoneyExtension;
+use Superscript\Axiom\Money\Types\MonetaryType;
+use Superscript\Axiom\Sources\InfixExpression;
+use Superscript\Axiom\Sources\SymbolSource;
 
-$overloader = new MonetaryOverloader();
+$dialect = Dialect::core()->with(new MoneyExtension(['GBP', 'USD', 'EUR']));
 
-$a = Money::of(100, 'EUR');
-$b = Money::of(50, 'EUR');
+$expression = new Expression(
+    new InfixExpression(new SymbolSource('a'), '+', new SymbolSource('b')),
+    dialect: $dialect,
+    declarations: ['a' => new MonetaryType(Currency::of('GBP')), 'b' => new MonetaryType(Currency::of('GBP'))],
+);
 
-// Addition
-$sum = $overloader->evaluate($a, $b, '+');
-// Result: EUR 150.00
-
-// Subtraction
-$diff = $overloader->evaluate($a, $b, '-');
-// Result: EUR 50.00
-
-// Multiplication and division require ONE numeric operand (multiplying or dividing two
-// monies is dimensionally meaningless and is not supported). The numeric operand may be
-// on either side for multiplication; division must be Money / number.
-//
-// To preserve precision, `*` and `/` return an exact Brick\Money\RationalMoney.
-$product = $overloader->evaluate($a, 3, '*');        // RationalMoney, exactly 300
-$product = $overloader->evaluate(3, $a, '*');        // commutative
-$quotient = $overloader->evaluate($a, 3, '/');       // RationalMoney, exactly 100/3 (no rounding)
-
-// Addition/subtraction: Money + Money stays Money; if either operand is a RationalMoney the
-// result is a RationalMoney ("rational is contagious"), so chained arithmetic never rounds mid-way.
-$sum = $overloader->evaluate($a, $b, '+');           // Money: EUR 150.00
-
-// Comparisons work across Money and RationalMoney, returning bool.
-$isEqual = $overloader->evaluate($a, $b, '==');     // false
-$isLess = $overloader->evaluate($b, $a, '<');       // true
-$isGreater = $overloader->evaluate($a, $b, '>');    // true
+$program = $expression->compile()->unwrap();
+$program(['a' => Money::of(1, 'GBP'), 'b' => Money::of(2, 'GBP')])->unwrap()->unwrap(); // GBP 3.00
 ```
 
-A `RationalMoney` becomes a concrete `Money` at the **type boundary**: when it lands in a
-`MonetaryType`, `MinorMonetaryType`, or `DynamicMonetaryType` field, `coerce()` rounds it to the
-currency scale — the rounding mode is configurable on the type and defaults to
-`RoundingMode::HALF_UP`, so a `RationalMoney` never leaves the type system. If you consume a
-`*`/`/` result directly (outside a type), collapse it yourself:
+The rules, per configured currency:
 
-```php
-use Brick\Math\RoundingMode;
-use Brick\Money\Context\DefaultContext;
+- **`+` / `-`** — same currency in, same currency out.
+- **`*` / `/`** — by a numeric scalar (multiplication on either side; division is `Money / number`). The calculation runs in Brick's exact rational domain and is **rounded back to the currency scale**, so the result is a `Money` of the same currency — each operator has one honest return type. The rounding mode is the extension's second constructor argument (default `RoundingMode::HALF_UP`). Division by zero is a *value-dependent* error, returned as an `Err`, not a compile-time refusal.
+- **`<` / `<=` / `>` / `>=`** — ordering between two monies of the same currency → boolean.
+- **`=` / `==` / `===` and `!=` / `!==`** — equality via Brick's amount-and-currency comparison. Core refuses equality on opaque operands, so the money package owns its own.
 
-$money = $quotient->unwrap()->to(new DefaultContext(), RoundingMode::HALF_UP); // EUR 33.33
-```
+A **cross-currency** operation (`Money<'GBP'> + Money<'USD'>`) matches no rule and is refused at compile time with a named diagnostic — no program containing it can be compiled, let alone run.
 
-> **Note:** `MonetaryIntervalOverloader` compares an interval against a `Money` only. A
-> `RationalMoney` produced by `*`/`/` cannot be compared against an interval directly —
-> collapse it to a `Money` first.
+> **Rounding note (breaking change):** previous versions returned an exact `Brick\Money\RationalMoney` from `*`/`/` and propagated it through `+`/`-` ("rational is contagious"). Under the typed model each operator has a fixed return type, so `*`/`/` now round to a `Money` at the currency scale using the extension's rounding mode. Chain in the rational domain yourself (via Brick) if you need to defer rounding.
 
 ### Monetary Intervals
 
@@ -189,48 +160,32 @@ use Superscript\MonetaryInterval\IntervalNotation;
 
 $intervalType = new MonetaryIntervalType(Currency::of('EUR'));
 
-// Parse interval from string notation
+// Parse an interval from string notation
 $interval = $intervalType->coerce('[100,200]')->unwrap()->unwrap();
-// Result: MonetaryInterval from EUR 100 to EUR 200 (inclusive)
 
-// Create MonetaryInterval directly
+// Or construct one directly
 $interval = new MonetaryInterval(
     left: Money::of(100, 'EUR'),
     right: Money::of(200, 'EUR'),
-    notation: IntervalNotation::CLOSED
+    notation: IntervalNotation::Closed,
 );
 
-// Format interval
-$formatted = $intervalType->format($interval);
-// Result: "[EUR 100.00, EUR 200.00]"
+$intervalType->format($interval); // "[EUR 100.00, EUR 200.00]"
 ```
 
-### Monetary Interval Operations
+`MonetaryIntervalType` projects to an opaque `monetary-interval<currency>` shape. The `MoneyExtension` contributes, per currency, the comparison of a monetary interval against a money of that currency (`<`, `<=`, `>`, `>=` → boolean) and equality between two monetary intervals of the same currency (`=`/`==`/`===`, `!=`/`!==`).
 
 ```php
-use Superscript\Axiom\Money\Operators\MonetaryIntervalOverloader;
+$dialect = Dialect::core()->with(new MoneyExtension(['EUR']));
 
-$overloader = new MonetaryIntervalOverloader();
-
-$interval1 = new MonetaryInterval(
-    left: Money::of(100, 'EUR'),
-    right: Money::of(200, 'EUR'),
-    notation: IntervalNotation::CLOSED
+$expression = new Expression(
+    new InfixExpression(new SymbolSource('range'), '>', new SymbolSource('amount')),
+    dialect: $dialect,
+    declarations: [
+        'range' => new MonetaryIntervalType(Currency::of('EUR')),
+        'amount' => new MonetaryType(Currency::of('EUR')),
+    ],
 );
-
-$interval2 = new MonetaryInterval(
-    left: Money::of(150, 'EUR'),
-    right: Money::of(250, 'EUR'),
-    notation: IntervalNotation::CLOSED
-);
-
-// Check if intervals overlap
-$overlaps = $overloader->evaluate($interval1, $interval2, '&&');
-// Result: true (they overlap from EUR 150 to EUR 200)
-
-// Union of intervals
-$union = $overloader->evaluate($interval1, $interval2, '||');
-// Result: MonetaryInterval from EUR 100 to EUR 250
 ```
 
 ## Development
@@ -259,18 +214,12 @@ The project enforces 100% code coverage and uses:
 - **Laravel Pint**: Code style
 - **Infection**: Mutation testing
 
-### Linting
-
-```bash
-vendor/bin/pint
-```
-
 ## Dependencies
 
 This library builds on several excellent packages:
 
 - [brick/money](https://github.com/brick/money): Robust money and currency library
-- [gosuperscript/schema](https://github.com/gosuperscript/schema): Schema validation framework
+- [gosuperscript/axiom](https://github.com/gosuperscript/axiom): The expression language it extends
 - [superscript/interval](https://github.com/superscript/interval): Interval mathematics
 - [superscript/monetary-interval](https://github.com/superscript/monetary-interval): Monetary interval support
 

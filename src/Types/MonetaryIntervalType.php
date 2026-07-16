@@ -13,6 +13,9 @@ use Superscript\Monads\Result\Result;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Types\Shapes\LiteralShape;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
+use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
 use function Superscript\Monads\Option\Some;
@@ -64,13 +67,21 @@ final readonly class MonetaryIntervalType implements Type
             ->mapErr(fn() => new TransformValueException(type: 'monetary-interval', value: $value));
     }
 
-    public function compare(mixed $a, mixed $b): bool
-    {
-        return $a->isEqualTo($b);
-    }
-
     public function format(mixed $value): string
     {
         return (string) $value;
+    }
+
+    /**
+     * An opaque `monetary-interval` identity parameterized by its currency,
+     * mirroring {@see MonetaryType}. Its comparison against a Money of the
+     * same currency is contributed per currency by
+     * {@see \Superscript\Axiom\Money\MoneyExtension}.
+     */
+    public function shape(): Shape
+    {
+        return new OpaqueShape('monetary-interval', [
+            'currency' => new LiteralShape($this->currency->getCurrencyCode()),
+        ]);
     }
 }

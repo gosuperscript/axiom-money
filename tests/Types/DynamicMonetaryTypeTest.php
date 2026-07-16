@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\DynamicMonetaryType;
+use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(DynamicMonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
@@ -65,24 +66,12 @@ class DynamicMonetaryTypeTest extends TestCase
         $this->assertTrue((new DynamicMonetaryType(RoundingMode::DOWN))->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
     }
 
-    #[DataProvider('compareProvider')]
     #[Test]
-    public function it_can_compare_two_values(string $a, string $b, bool $expected)
+    public function it_projects_to_an_opaque_money_shape_without_a_currency_parameter(): void
     {
-        $type = new DynamicMonetaryType();
-        $a = $type->coerce($a)->unwrap()->unwrap();
-        $b = $type->coerce($b)->unwrap()->unwrap();
-        $this->assertSame($expected, $type->compare($a, $b));
-    }
-
-    public static function compareProvider(): array
-    {
-        return [
-            ['EUR 1', 'EUR 1', true],
-            ['EUR 1.1', 'EUR 1.1', true],
-            ['EUR 1', 'EUR 1.1', false],
-            ['EUR 1', 'USD 1', false],
-        ];
+        // Boundary/coercion type only: currency is not statically known, so
+        // it carries no currency parameter and resolves no operator rules.
+        $this->assertEquals(new OpaqueShape('money'), (new DynamicMonetaryType())->shape());
     }
 
     #[DataProvider('formatProvider')]
