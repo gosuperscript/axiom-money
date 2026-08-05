@@ -83,7 +83,7 @@ class MinorMonetaryTypeTest extends TestCase
     #[Test]
     public function it_honors_a_custom_rounding_mode_when_coercing_rational_money(): void
     {
-        $down = new MinorMonetaryType(Currency::of('EUR'), RoundingMode::DOWN);
+        $down = new MinorMonetaryType(Currency::of('EUR'), RoundingMode::Down);
         $twoThirds = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
 
         $this->assertTrue($down->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));

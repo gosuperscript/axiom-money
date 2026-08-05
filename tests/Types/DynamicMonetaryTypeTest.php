@@ -33,8 +33,8 @@ class DynamicMonetaryTypeTest extends TestCase
     {
         return [
             ['EUR 1', Money::of(1, 'EUR')],
-            ['£1.23', Money::of(1.23, 'GBP')],
-            ['USD 100.50', Money::of(100.50, 'USD')],
+            ['£1.23', Money::of('1.23', 'GBP')],
+            ['USD 100.50', Money::of('100.50', 'USD')],
             [Money::of(100, 'EUR'), Money::of(100, 'EUR')],
         ];
     }
@@ -63,7 +63,7 @@ class DynamicMonetaryTypeTest extends TestCase
     {
         $twoThirds = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
 
-        $this->assertTrue((new DynamicMonetaryType(RoundingMode::DOWN))->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
+        $this->assertTrue((new DynamicMonetaryType(RoundingMode::Down))->coerce($twoThirds)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
     }
 
     #[Test]

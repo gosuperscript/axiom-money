@@ -26,9 +26,9 @@ class MoneyParserTest extends TestCase
     {
         return [
             ['EUR 1', Money::of(1, 'EUR')],
-            ['£1.23', Money::of(1.23, 'GBP')],
-            ['USD 100.50', Money::of(100.50, 'USD')],
-            [Money::of(100.50, 'EUR'), Money::of(100.50, 'EUR')],
+            ['£1.23', Money::of('1.23', 'GBP')],
+            ['USD 100.50', Money::of('100.50', 'USD')],
+            [Money::of('100.50', 'EUR'), Money::of('100.50', 'EUR')],
         ];
     }
 
@@ -53,6 +53,24 @@ class MoneyParserTest extends TestCase
             ['EUR foobar'],
             ['1 EUR'],
             ['GBP'],
+        ];
+    }
+
+    #[DataProvider('exactAmounts')]
+    #[Test]
+    public function it_renders_a_raw_amount_in_the_form_brick_accepts(string|float|int $amount, string|int $expected)
+    {
+        $this->assertSame($expected, MoneyParser::exact($amount));
+    }
+
+    public static function exactAmounts(): array
+    {
+        return [
+            'a float becomes its shortest round-tripping decimal' => [1.23, '1.23'],
+            'a float with a trailing zero drops it' => [100.50, '100.5'],
+            'a whole float keeps no decimal point' => [2.0, '2'],
+            'an int passes through as an int' => [1234, 1234],
+            'a numeric string passes through untouched' => ['1234.5678', '1234.5678'],
         ];
     }
 }

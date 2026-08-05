@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Superscript\Axiom\Dialect;
 use Superscript\Axiom\Expression;
 use Superscript\Axiom\Money\MoneyExtension;
+use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\Axiom\Money\Types\MonetaryType;
 use Superscript\Axiom\Source;
@@ -29,9 +30,10 @@ use Superscript\MonetaryInterval\MonetaryInterval;
 #[CoversClass(MoneyExtension::class)]
 #[UsesClass(MonetaryType::class)]
 #[UsesClass(MonetaryIntervalType::class)]
+#[UsesClass(MoneyParser::class)]
 class MoneyExtensionTest extends TestCase
 {
-    private function dialect(RoundingMode $rounding = RoundingMode::HALF_UP): Dialect
+    private function dialect(RoundingMode $rounding = RoundingMode::HalfUp): Dialect
     {
         return Dialect::core()->with(new MoneyExtension(['GBP', 'USD', 'EUR'], $rounding));
     }
@@ -40,7 +42,7 @@ class MoneyExtensionTest extends TestCase
      * @param array<string, Type> $declarations
      * @param array<string, mixed> $bindings
      */
-    private function evaluate(Source $source, array $declarations, array $bindings, RoundingMode $rounding = RoundingMode::HALF_UP): mixed
+    private function evaluate(Source $source, array $declarations, array $bindings, RoundingMode $rounding = RoundingMode::HalfUp): mixed
     {
         return (new Expression($source, dialect: $this->dialect($rounding), declarations: $declarations))
             ->compile()->unwrap()($bindings)->unwrap()->unwrap();
@@ -62,7 +64,7 @@ class MoneyExtensionTest extends TestCase
             ['a' => Money::of(1, 'GBP'), 'b' => Money::of(2, 'GBP')],
         );
 
-        $this->assertTrue($result->isAmountAndCurrencyEqualTo(Money::of(3, 'GBP')));
+        $this->assertTrue($result->isSameValueAs(Money::of(3, 'GBP')));
     }
 
     #[Test]
@@ -74,7 +76,7 @@ class MoneyExtensionTest extends TestCase
             ['a' => Money::of(5, 'GBP'), 'b' => Money::of(2, 'GBP')],
         );
 
-        $this->assertTrue($result->isAmountAndCurrencyEqualTo(Money::of(3, 'GBP')));
+        $this->assertTrue($result->isSameValueAs(Money::of(3, 'GBP')));
     }
 
     #[Test]
@@ -86,7 +88,7 @@ class MoneyExtensionTest extends TestCase
             ['m' => Money::of(10, 'GBP')],
         );
 
-        $this->assertTrue($result->isAmountAndCurrencyEqualTo(Money::of(20, 'GBP')));
+        $this->assertTrue($result->isSameValueAs(Money::of(20, 'GBP')));
     }
 
     #[Test]
@@ -98,7 +100,7 @@ class MoneyExtensionTest extends TestCase
             ['m' => Money::of(10, 'GBP')],
         );
 
-        $this->assertTrue($result->isAmountAndCurrencyEqualTo(Money::of(20, 'GBP')));
+        $this->assertTrue($result->isSameValueAs(Money::of(20, 'GBP')));
     }
 
     #[Test]
@@ -110,7 +112,7 @@ class MoneyExtensionTest extends TestCase
             ['m' => Money::of(20, 'GBP')],
         );
 
-        $this->assertTrue($result->isAmountAndCurrencyEqualTo(Money::of(10, 'GBP')));
+        $this->assertTrue($result->isSameValueAs(Money::of(10, 'GBP')));
     }
 
     #[Test]
@@ -125,7 +127,7 @@ class MoneyExtensionTest extends TestCase
             ['m' => Money::of(10, 'GBP')],
             $rounding,
         );
-        $this->assertTrue($quotient->isAmountAndCurrencyEqualTo(Money::of($expectedQuotient, 'GBP')));
+        $this->assertTrue($quotient->isSameValueAs(Money::of($expectedQuotient, 'GBP')));
 
         $product = $this->evaluate(
             new InfixExpression(new SymbolSource('m'), '*', new StaticSource(0.6667)),
@@ -133,13 +135,13 @@ class MoneyExtensionTest extends TestCase
             ['m' => Money::of(10, 'GBP')],
             $rounding,
         );
-        $this->assertTrue($product->isAmountAndCurrencyEqualTo(Money::of($expectedProduct, 'GBP')));
+        $this->assertTrue($product->isSameValueAs(Money::of($expectedProduct, 'GBP')));
     }
 
     public static function roundingCases(): Generator
     {
-        yield 'half up' => [RoundingMode::HALF_UP, '1.43', '6.67'];
-        yield 'down' => [RoundingMode::DOWN, '1.42', '6.66'];
+        yield 'half up' => [RoundingMode::HalfUp, '1.43', '6.67'];
+        yield 'down' => [RoundingMode::Down, '1.42', '6.66'];
     }
 
     #[Test]

@@ -18,6 +18,7 @@ use Superscript\Axiom\Types\Shapes\OpaqueShape;
 use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
+use function Psl\Type\instance_of;
 use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
 use function Superscript\Monads\Result\Err;
@@ -39,7 +40,7 @@ final readonly class MonetaryIntervalType implements Type
             return Err(new TransformValueException(type: 'monetary-interval', value: $value));
         }
 
-        if (!$value->left->getCurrency()->is($this->currency)) {
+        if (!$value->left->getCurrency()->isEqualTo($this->currency)) {
             return Err(new TransformValueException(type: 'monetary-interval', value: $value));
         }
 
@@ -52,7 +53,7 @@ final readonly class MonetaryIntervalType implements Type
     public function coerce(mixed $value): Result
     {
         return (match (true) {
-            $value instanceof MonetaryInterval => $value->left->getCurrency()->is($this->currency)
+            $value instanceof MonetaryInterval => $value->left->getCurrency()->isEqualTo($this->currency)
                 ? Ok($value)
                 : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->left->getCurrency()->getCurrencyCode()))),
             is_string($value) => attempt(fn() => Interval::fromString($value))
@@ -69,7 +70,7 @@ final readonly class MonetaryIntervalType implements Type
 
     public function format(mixed $value): string
     {
-        return (string) $value;
+        return (string) instance_of(MonetaryInterval::class)->assert($value);
     }
 
     /**

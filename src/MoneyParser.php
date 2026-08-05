@@ -47,7 +47,7 @@ class MoneyParser
 
             if ($amount !== false) {
                 try {
-                    return Ok(Money::of($amount, non_empty_string()->assert($currency)));
+                    return Ok(Money::of(self::exact($amount), non_empty_string()->assert($currency)));
                 } catch (RoundingNecessaryException $exception) {
                     return Err(new InvalidArgumentException(sprintf('Could not parse [%s] as money', new Exporter()->shortenedExport($money)), previous: $exception));
                 }
@@ -57,5 +57,20 @@ class MoneyParser
         return Err(new InvalidArgumentException(
             message: sprintf('Could not parse [%s] as money', new Exporter()->shortenedExport($money)),
         ));
+    }
+
+    /**
+     * Renders a raw scalar amount in the form brick accepts.
+     *
+     * brick rejects floats throughout its monetary and arithmetic APIs, because
+     * a binary float carries no exact decimal value to compute with: the literal
+     * 0.1 is not one tenth. Casting to string yields the shortest decimal that
+     * round-trips to the same float, which is the number the source text
+     * denoted, so the amount brick receives is the amount the author wrote.
+     * Ints and numeric strings are already exact and pass through untouched.
+     */
+    public static function exact(string|float|int $amount): string|int
+    {
+        return is_float($amount) ? (string) $amount : $amount;
     }
 }

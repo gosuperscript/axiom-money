@@ -9,6 +9,7 @@ use Brick\Money\Context\DefaultContext;
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use Superscript\Axiom\Extension;
+use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\Axiom\Money\Types\MonetaryType;
 use Superscript\Axiom\Operators\Operator;
@@ -51,7 +52,7 @@ final class MoneyExtension extends Extension
      */
     public function __construct(
         private readonly array $currencies,
-        private readonly RoundingMode $roundingMode = RoundingMode::HALF_UP,
+        private readonly RoundingMode $roundingMode = RoundingMode::HalfUp,
     ) {}
 
     public function operators(): array
@@ -78,7 +79,7 @@ final class MoneyExtension extends Extension
                 ->evaluatesWith(fn(int|float $left, Money $right) => $this->scale($right, $left));
             $rules[] = Operator::infix('/')->takes($money, $number)->returns($money)
                 ->evaluatesWith(fn(Money $left, int|float $right) => attempt(
-                    fn() => $left->toRational()->dividedBy($right)->to(new DefaultContext(), $this->roundingMode),
+                    fn() => $left->toRational()->dividedBy(MoneyParser::exact($right))->toContext(new DefaultContext(), $this->roundingMode),
                 ));
 
             // Ordering: same currency.
@@ -94,11 +95,11 @@ final class MoneyExtension extends Extension
             // Equality: Brick's amount-and-currency comparison, not identity.
             foreach (['=', '==', '==='] as $operator) {
                 $rules[] = Operator::infix($operator)->takes($money, $money)->returns($boolean)
-                    ->evaluatesWith(fn(Money $left, Money $right) => $left->isAmountAndCurrencyEqualTo($right));
+                    ->evaluatesWith(fn(Money $left, Money $right) => $left->isSameValueAs($right));
             }
             foreach (['!=', '!=='] as $operator) {
                 $rules[] = Operator::infix($operator)->takes($money, $money)->returns($boolean)
-                    ->evaluatesWith(fn(Money $left, Money $right) => !$left->isAmountAndCurrencyEqualTo($right));
+                    ->evaluatesWith(fn(Money $left, Money $right) => !$left->isSameValueAs($right));
             }
 
             // A monetary interval compared against a money of its currency.
@@ -138,6 +139,7 @@ final class MoneyExtension extends Extension
 
     private function scale(Money $money, int|float $scalar): Money
     {
-        return $money->toRational()->multipliedBy($scalar)->to(new DefaultContext(), $this->roundingMode);
+        return $money->toRational()->multipliedBy(MoneyParser::exact($scalar))->toContext(new DefaultContext(), $this->roundingMode);
     }
+
 }
