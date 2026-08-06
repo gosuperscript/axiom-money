@@ -64,13 +64,29 @@ class MoneyParser
      *
      * brick rejects floats throughout its monetary and arithmetic APIs, because
      * a binary float carries no exact decimal value to compute with: the literal
-     * 0.1 is not one tenth. Casting to string yields the shortest decimal that
-     * round-trips to the same float, which is the number the source text
-     * denoted, so the amount brick receives is the amount the author wrote.
-     * Ints and numeric strings are already exact and pass through untouched.
+     * 0.1 is not one tenth. A float that reaches here is therefore spelled as
+     * the shortest decimal that round-trips back to it, so brick receives the
+     * number the caller actually holds.
+     *
+     * That spelling is `json_encode`'s, because it honours `serialize_precision`
+     * (-1). A `(string)` cast honours `precision` instead — 14 significant
+     * digits by default — so it truncates and can emit exponent notation:
+     * `(string) 123456789012345.67` gives `1.2345678901235E+14`, a different
+     * amount. Ints and numeric strings are already exact and pass through
+     * untouched.
+     *
+     * @throws InvalidArgumentException if the float is not finite, and so names no decimal at all
      */
     public static function exact(string|float|int $amount): string|int
     {
-        return is_float($amount) ? (string) $amount : $amount;
+        if (! is_float($amount)) {
+            return $amount;
+        }
+
+        if (! is_finite($amount)) {
+            throw new InvalidArgumentException(sprintf('[%s] is not a monetary amount.', $amount));
+        }
+
+        return json_encode($amount, JSON_THROW_ON_ERROR);
     }
 }
