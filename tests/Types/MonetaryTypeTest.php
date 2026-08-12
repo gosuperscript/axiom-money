@@ -37,11 +37,11 @@ class MonetaryTypeTest extends TestCase
             [150, 'EUR', Money::of(150, 'EUR')],
             ['150', 'EUR', Money::of(150, 'EUR')],
             [150, 'GBP', Money::of(150, 'GBP')],
-            [1234.56, 'EUR', Money::of(1234.56, 'EUR')],
-            ['1234.56', 'EUR', Money::of(1234.56, 'EUR')],
+            [1234.56, 'EUR', Money::of('1234.56', 'EUR')],
+            ['1234.56', 'EUR', Money::of('1234.56', 'EUR')],
             ['100.000', 'EUR', Money::of(100, 'EUR')],
-            ['1234.567', 'IQD', Money::of(1234.567, 'IQD')],
-            ['1234.5678', 'UYW', Money::of(1234.5678, 'UYW')],
+            ['1234.567', 'IQD', Money::of('1234.567', 'IQD')],
+            ['1234.5678', 'UYW', Money::of('1234.5678', 'UYW')],
             [Money::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
             // An exactly-representable RationalMoney coerces without rounding.
             [RationalMoney::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
@@ -63,10 +63,10 @@ class MonetaryTypeTest extends TestCase
     {
         $rational = RationalMoney::of(2, 'EUR')->dividedBy(3); // 0.666...
 
-        $halfUp = new MonetaryType(Currency::of('EUR'), RoundingMode::HALF_UP);
+        $halfUp = new MonetaryType(Currency::of('EUR'), RoundingMode::HalfUp);
         $this->assertTrue($halfUp->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('0.67', 'EUR')));
 
-        $down = new MonetaryType(Currency::of('EUR'), RoundingMode::DOWN);
+        $down = new MonetaryType(Currency::of('EUR'), RoundingMode::Down);
         $this->assertTrue($down->coerce($rational)->unwrap()->unwrap()->isEqualTo(Money::of('0.66', 'EUR')));
     }
 
@@ -128,8 +128,8 @@ class MonetaryTypeTest extends TestCase
     public static function formatProvider(): array
     {
         return [
-            [Money::of(1234.56, 'EUR'), '€1,234.56'],
-            [Money::of(1234.56, 'GBP'), '£1,234.56'],
+            [Money::of('1234.56', 'EUR'), '€1,234.56'],
+            [Money::of('1234.56', 'GBP'), '£1,234.56'],
             [Money::of(1000000, 'EUR'), '€1,000,000.00'],
         ];
     }

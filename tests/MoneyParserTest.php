@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Superscript\Axiom\Money\Tests;
 
 use Brick\Money\Money;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -26,9 +27,9 @@ class MoneyParserTest extends TestCase
     {
         return [
             ['EUR 1', Money::of(1, 'EUR')],
-            ['£1.23', Money::of(1.23, 'GBP')],
-            ['USD 100.50', Money::of(100.50, 'USD')],
-            [Money::of(100.50, 'EUR'), Money::of(100.50, 'EUR')],
+            ['£1.23', Money::of('1.23', 'GBP')],
+            ['USD 100.50', Money::of('100.50', 'USD')],
+            [Money::of('100.50', 'EUR'), Money::of('100.50', 'EUR')],
         ];
     }
 
@@ -54,5 +55,34 @@ class MoneyParserTest extends TestCase
             ['1 EUR'],
             ['GBP'],
         ];
+    }
+
+    #[DataProvider('exactAmounts')]
+    #[Test]
+    public function it_renders_a_raw_amount_in_the_form_brick_accepts(string|float|int $amount, string|int $expected)
+    {
+        $this->assertSame($expected, MoneyParser::exact($amount));
+    }
+
+    public static function exactAmounts(): array
+    {
+        return [
+            'a float becomes its shortest round-tripping decimal' => [1.23, '1.23'],
+            'a float with a trailing zero drops it' => [100.50, '100.5'],
+            'a whole float keeps no decimal point' => [2.0, '2'],
+            // Past 14 significant digits a (string) cast truncates to 1.2345678901235E+14.
+            'a float past the default precision keeps every digit' => [123456789012345.67, '123456789012345.67'],
+            'a float that is all residue keeps it' => [0.30000000000000004, '0.30000000000000004'],
+            'an int passes through as an int' => [1234, 1234],
+            'a numeric string passes through untouched' => ['1234.5678', '1234.5678'],
+        ];
+    }
+
+    #[Test]
+    public function it_refuses_a_float_that_names_no_amount(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        MoneyParser::exact(INF);
     }
 }

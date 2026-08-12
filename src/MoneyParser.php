@@ -47,7 +47,7 @@ class MoneyParser
 
             if ($amount !== false) {
                 try {
-                    return Ok(Money::of($amount, non_empty_string()->assert($currency)));
+                    return Ok(Money::of(self::exact($amount), non_empty_string()->assert($currency)));
                 } catch (RoundingNecessaryException $exception) {
                     return Err(new InvalidArgumentException(sprintf('Could not parse [%s] as money', new Exporter()->shortenedExport($money)), previous: $exception));
                 }
@@ -57,5 +57,36 @@ class MoneyParser
         return Err(new InvalidArgumentException(
             message: sprintf('Could not parse [%s] as money', new Exporter()->shortenedExport($money)),
         ));
+    }
+
+    /**
+     * Renders a raw scalar amount in the form brick accepts.
+     *
+     * brick rejects floats throughout its monetary and arithmetic APIs, because
+     * a binary float carries no exact decimal value to compute with: the literal
+     * 0.1 is not one tenth. A float that reaches here is therefore spelled as
+     * the shortest decimal that round-trips back to it, so brick receives the
+     * number the caller actually holds.
+     *
+     * That spelling is `json_encode`'s, because it honours `serialize_precision`
+     * (-1). A `(string)` cast honours `precision` instead — 14 significant
+     * digits by default — so it truncates and can emit exponent notation:
+     * `(string) 123456789012345.67` gives `1.2345678901235E+14`, a different
+     * amount. Ints and numeric strings are already exact and pass through
+     * untouched.
+     *
+     * @throws InvalidArgumentException if the float is not finite, and so names no decimal at all
+     */
+    public static function exact(string|float|int $amount): string|int
+    {
+        if (! is_float($amount)) {
+            return $amount;
+        }
+
+        if (! is_finite($amount)) {
+            throw new InvalidArgumentException(sprintf('[%s] is not a monetary amount.', $amount));
+        }
+
+        return json_encode($amount, JSON_THROW_ON_ERROR);
     }
 }
