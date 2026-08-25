@@ -87,9 +87,38 @@ class MonetaryIntervalTypeTest extends TestCase
     public static function formatProvider(): array
     {
         return [
-            ['[1,2]', 'EUR', '[EUR 1.00,EUR 2.00]'],
-            ['(1,2)', 'GBP', '(GBP 1.00,GBP 2.00)'],
+            'a bounded interval reads as a range' => ['[1,2]', 'EUR', '€1 – €2'],
+            'endpoint openness is not shown' => ['(1,2)', 'GBP', '£1 – £2'],
+            'thousands are grouped' => ['(50000,100000]', 'GBP', '£50,000 – £100,000'],
+            'a missing right endpoint reads as a floor' => ['[5000,)', 'GBP', '£5,000 or more'],
+            'a missing left endpoint reads as a ceiling' => ['(,1000]', 'GBP', 'up to £1,000'],
         ];
+    }
+
+    #[Test]
+    public function it_keeps_the_pence_on_an_endpoint_that_has_them(): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('GBP'));
+        $interval = new MonetaryInterval(
+            left: Money::of('1234.56', 'GBP'),
+            right: Money::of(2000, 'GBP'),
+            notation: IntervalNotation::LeftOpen,
+        );
+
+        $this->assertSame('£1,234.56 – £2,000', $type->format($interval));
+    }
+
+    #[Test]
+    public function it_formats_an_interval_that_is_bounded_on_neither_side(): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('GBP'));
+        $interval = new MonetaryInterval(
+            left: Money::of(PHP_INT_MIN, 'GBP'),
+            right: Money::of(PHP_INT_MAX, 'GBP'),
+            notation: IntervalNotation::Open,
+        );
+
+        $this->assertSame('any', $type->format($interval));
     }
 
     #[Test]
