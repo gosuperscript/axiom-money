@@ -18,6 +18,7 @@ use Superscript\Axiom\Types\Shapes\OpaqueShape;
 use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
+use function Psl\Type\instance_of;
 use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
 use function Superscript\Monads\Result\Err;
@@ -67,9 +68,43 @@ final readonly class MonetaryIntervalType implements Type
             ->mapErr(fn() => new TransformValueException(type: 'monetary-interval', value: $value));
     }
 
+    /**
+     * Reads as the band it is, not as the notation it was written in: a
+     * formatted interval ends up in front of a customer — on a quote, in a
+     * document — where "(GBP 50000.00,GBP 100000.00]" says nothing. Endpoint
+     * openness is dropped, because prose has no natural way to say it and no
+     * display has needed the distinction; cast the value itself when the exact
+     * interval matters ({@see MonetaryInterval::__toString}).
+     *
+     * A half-bounded interval carries the PHP_INT_MIN/PHP_INT_MAX sentinel
+     * {@see MonetaryInterval::fromString} writes for the endpoint that was left
+     * out, so the missing side becomes "or more"/"up to" rather than printing
+     * the sentinel as if it were a real amount.
+     */
     public function format(mixed $value): string
     {
-        return (string) $value;
+        $interval = instance_of(MonetaryInterval::class)->assert($value);
+
+        $left = $interval->left->isEqualTo(PHP_INT_MIN) ? null : $interval->left;
+        $right = $interval->right->isEqualTo(PHP_INT_MAX) ? null : $interval->right;
+
+        return match (true) {
+            $left !== null && $right !== null => sprintf('%s – %s', self::amount($left), self::amount($right)),
+            $left !== null => sprintf('%s or more', self::amount($left)),
+            $right !== null => sprintf('up to %s', self::amount($right)),
+            default => 'any',
+        };
+    }
+
+    /**
+     * A whole endpoint drops its pence, so a band reads "£50,000 – £100,000"
+     * rather than "£50,000.00 – £100,000.00"; an endpoint that has pence keeps
+     * them. {@see MonetaryType::format} shows them either way, because a single
+     * amount is a figure to be read exactly and a band is a label.
+     */
+    private static function amount(Money $money): string
+    {
+        return $money->formatTo('en_GB', allowWholeNumber: true);
     }
 
     /**
