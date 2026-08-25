@@ -20,6 +20,7 @@ use Superscript\Axiom\Types\Type;
 
 use function Psl\Type\float;
 use function Psl\Type\int;
+use function Psl\Type\instance_of;
 use function Psl\Type\non_empty_string;
 use function Psl\Type\string;
 use function Psl\Type\union;
@@ -75,8 +76,9 @@ final readonly class MonetaryType implements Type
 
     public function format(mixed $value): string
     {
+        $money = instance_of(Money::class)->assert($value);
         $formatter = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
-        $result = $formatter->formatCurrency($value->getAmount()->toFloat(), $value->getCurrency()->getCurrencyCode());
+        $result = $formatter->formatCurrency($money->getAmount()->toFloat(), $money->getCurrency()->getCurrencyCode());
         return non_empty_string()->assert($result);
     }
 

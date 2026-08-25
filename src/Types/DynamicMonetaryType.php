@@ -16,6 +16,7 @@ use Superscript\Axiom\Types\Shapes\OpaqueShape;
 use Superscript\Axiom\Types\Shapes\Shape;
 use Superscript\Axiom\Types\Type;
 
+use function Psl\Type\instance_of;
 use function Psl\Type\non_empty_string;
 use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\Err;
@@ -55,8 +56,9 @@ final readonly class DynamicMonetaryType implements Type
 
     public function format(mixed $value): string
     {
+        $money = instance_of(Money::class)->assert($value);
         $formatter = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
-        $result = $formatter->formatCurrency($value->getAmount()->toFloat(), $value->getCurrency()->getCurrencyCode());
+        $result = $formatter->formatCurrency($money->getAmount()->toFloat(), $money->getCurrency()->getCurrencyCode());
         return non_empty_string()->assert($result);
     }
 
