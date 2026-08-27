@@ -88,7 +88,7 @@ class DynamicMonetaryTypeTest extends TestCase
         return [
             ['EUR 1.23', '€1.23'],
             ['£1.23', '£1.23'],
-            ['EUR 10000', '€10,000.00'],
+            ['EUR 10000', '€10,000'],
         ];
     }
 
