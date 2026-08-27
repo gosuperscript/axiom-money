@@ -130,7 +130,8 @@ class MonetaryTypeTest extends TestCase
         return [
             [Money::of(1234.56, 'EUR'), '€1,234.56'],
             [Money::of(1234.56, 'GBP'), '£1,234.56'],
-            [Money::of(1000000, 'EUR'), '€1,000,000.00'],
+            [Money::of(1000000, 'EUR'), '€1,000,000'],
+            [Money::of('1000000.50', 'EUR'), '€1,000,000.50'],
         ];
     }
 

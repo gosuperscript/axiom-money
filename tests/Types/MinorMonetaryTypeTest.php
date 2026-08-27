@@ -120,7 +120,7 @@ class MinorMonetaryTypeTest extends TestCase
         return [
             [Money::ofMinor(123, 'EUR'), '€1.23'],
             [Money::ofMinor(123, 'GBP'), '£1.23'],
-            [Money::ofMinor(1000000, 'EUR'), '€10,000.00'],
+            [Money::ofMinor(1000000, 'EUR'), '€10,000'],
         ];
     }
 
