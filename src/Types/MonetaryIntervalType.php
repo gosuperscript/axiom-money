@@ -99,8 +99,8 @@ final readonly class MonetaryIntervalType implements Type
     /**
      * A whole endpoint drops its pence, so a band reads "£50,000 – £100,000"
      * rather than "£50,000.00 – £100,000.00"; an endpoint that has pence keeps
-     * them. {@see MonetaryType::format} shows them either way, because a single
-     * amount is a figure to be read exactly and a band is a label.
+     * them — the same treatment a single amount gets in
+     * {@see MonetaryType::format}.
      */
     private static function amount(Money $money): string
     {

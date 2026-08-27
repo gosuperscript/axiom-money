@@ -22,7 +22,6 @@ use Superscript\Axiom\Types\Type;
 use function Psl\Type\float;
 use function Psl\Type\int;
 use function Psl\Type\instance_of;
-use function Psl\Type\non_empty_string;
 use function Psl\Type\string;
 use function Psl\Type\union;
 use function Superscript\Monads\Option\Some;
@@ -75,12 +74,15 @@ final readonly class MonetaryType implements Type
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 
+    /**
+     * A whole amount drops its pence, so it reads "£1,000" rather than
+     * "£1,000.00"; an amount that has pence keeps them. Formatted amounts end
+     * up in front of a customer — on a quote, in a document — where trailing
+     * zeroes only add noise.
+     */
     public function format(mixed $value): string
     {
-        $money = instance_of(Money::class)->assert($value);
-        $formatter = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
-        $result = $formatter->formatCurrency($money->getAmount()->toFloat(), $money->getCurrency()->getCurrencyCode());
-        return non_empty_string()->assert($result);
+        return instance_of(Money::class)->assert($value)->formatToLocale('en_GB', allowWholeNumber: true);
     }
 
     /**
