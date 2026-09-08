@@ -35,8 +35,33 @@ class MonetaryIntervalTypeTest extends TestCase
     {
         return [
             ['[1,2]', new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Closed)],
+            ['[EUR 1.00,EUR 2.00]', new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Closed)],
+            ['(EUR 1.00,EUR 2.00)', new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Open)],
             [MonetaryInterval::fromString('[EUR 1,EUR 2]'), new MonetaryInterval(Money::of(1, 'EUR'), Money::of(2, 'EUR'), IntervalNotation::Closed)],
         ];
+    }
+
+    /**
+     * The inverse property a round trip depends on: a value of this type is
+     * serialized by casting it, and a caller that sends it back must have it
+     * read rather than rejected.
+     */
+    #[Test]
+    public function it_reads_back_the_notation_a_monetary_interval_casts_itself_to(): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('GBP'));
+        $interval = new MonetaryInterval(Money::of(0, 'GBP'), Money::of(50000, 'GBP'), IntervalNotation::Closed);
+
+        $this->assertTrue($type->coerce((string) $interval)->unwrap()->unwrap()->isEqualTo($interval));
+    }
+
+    #[Test]
+    public function it_returns_err_if_value_is_a_notated_interval_of_different_currency(): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('EUR'));
+        $result = $type->coerce($value = '[USD 1.00,USD 2.00]');
+
+        $this->assertEquals(new TransformValueException(type: 'monetary-interval', value: $value), $result->unwrapErr());
     }
 
     #[Test]

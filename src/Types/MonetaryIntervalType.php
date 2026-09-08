@@ -48,24 +48,44 @@ final readonly class MonetaryIntervalType implements Type
     }
 
     /**
+     * Reads a string in either notation an interval is written in: the
+     * currency-carrying one a MonetaryInterval casts itself to
+     * ("[GBP 0.00,GBP 50000.00]"), and the plain numeric one a configuration
+     * authors ("[0,50000]"), whose endpoints take this type's currency.
+     *
+     * The first form is what a serialized value of this type looks like on the
+     * wire, so it has to be readable: a caller that echoes a value back — the
+     * documents endpoint does exactly that — must get it read, not rejected.
+     *
      * @return Result<Option<MonetaryInterval>, TransformValueException>
      */
     public function coerce(mixed $value): Result
     {
         return (match (true) {
-            $value instanceof MonetaryInterval => $value->left->getCurrency()->isEqualTo($this->currency)
-                ? Ok($value)
-                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $value->left->getCurrency()->getCurrencyCode()))),
-            is_string($value) => attempt(fn() => Interval::fromString($value))
-                ->map(fn(Interval $interval) => new MonetaryInterval(
-                    left: Money::of($interval->left->toInt(), $this->currency),
-                    right: Money::of($interval->right->toInt(), $this->currency),
-                    notation: IntervalNotation::from($interval->notation->value),
-                )),
+            $value instanceof MonetaryInterval => Ok($value),
+            is_string($value) => attempt(fn() => MonetaryInterval::fromString($value))
+                ->orElse(fn() => attempt(fn() => $this->fromNumericNotation($value))),
             default => Err(new TransformValueException(type: 'monetary-interval', value: $value)),
         })
-            ->map(fn(MonetaryInterval $interval) => Some($interval))
+            ->andThen(fn(MonetaryInterval $interval) => $interval->left->getCurrency()->isEqualTo($this->currency)
+                ? Ok(Some($interval))
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $interval->left->getCurrency()->getCurrencyCode()))))
             ->mapErr(fn() => new TransformValueException(type: 'monetary-interval', value: $value));
+    }
+
+    /**
+     * Endpoints of a numeric interval are whole units of this type's currency,
+     * not minor ones: "[0,50000]" in GBP is nil to fifty thousand pounds.
+     */
+    private function fromNumericNotation(string $value): MonetaryInterval
+    {
+        $interval = Interval::fromString($value);
+
+        return new MonetaryInterval(
+            left: Money::of($interval->left->toInt(), $this->currency),
+            right: Money::of($interval->right->toInt(), $this->currency),
+            notation: IntervalNotation::from($interval->notation->value),
+        );
     }
 
     /**
