@@ -52,15 +52,6 @@ final readonly class MonetaryType implements Type
     }
 
     /**
-     * Reads a string in either notation an amount is written in: the
-     * currency-carrying one a Money casts itself to ("GBP 100.00"), and the
-     * bare one a configuration authors ("100"), which takes this type's
-     * currency.
-     *
-     * The first form is what a serialized value of this type looks like on the
-     * wire, so it has to be readable: a caller that echoes a value back — the
-     * documents endpoint does exactly that — must get it read, not rejected.
-     *
      * @return Result<Option<Money>, TransformValueException>
      */
     public function coerce(mixed $value): Result

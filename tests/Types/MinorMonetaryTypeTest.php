@@ -71,11 +71,6 @@ class MinorMonetaryTypeTest extends TestCase
         ];
     }
 
-    /**
-     * The inverse property a round trip depends on: a value of this type is
-     * serialized by casting it, and a caller that sends it back must have it
-     * read rather than rejected.
-     */
     #[Test]
     public function it_reads_back_the_string_a_money_casts_itself_to(): void
     {
@@ -85,10 +80,6 @@ class MinorMonetaryTypeTest extends TestCase
         $this->assertTrue($type->coerce((string) $money)->unwrap()->unwrap()->isEqualTo($money));
     }
 
-    /**
-     * Only a bare amount is in minor units. A prefixed one carries its own
-     * scale: "GBP 100.00" is a hundred pounds on the wire, never a hundred pence.
-     */
     #[Test]
     public function it_reads_a_bare_amount_as_minor_units_and_a_prefixed_amount_as_major_units(): void
     {

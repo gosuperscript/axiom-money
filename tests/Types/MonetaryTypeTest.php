@@ -50,11 +50,6 @@ class MonetaryTypeTest extends TestCase
         ];
     }
 
-    /**
-     * The inverse property a round trip depends on: a value of this type is
-     * serialized by casting it, and a caller that sends it back must have it
-     * read rather than rejected.
-     */
     #[Test]
     public function it_reads_back_the_string_a_money_casts_itself_to(): void
     {
@@ -64,7 +59,6 @@ class MonetaryTypeTest extends TestCase
         $this->assertTrue($type->coerce((string) $money)->unwrap()->unwrap()->isEqualTo($money));
     }
 
-    /** A bare amount is whole units of this type's currency, with or without a currency prefix. */
     #[Test]
     public function it_reads_a_bare_amount_and_a_prefixed_amount_as_major_units(): void
     {
