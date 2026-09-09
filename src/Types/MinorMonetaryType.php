@@ -22,7 +22,6 @@ use Superscript\Axiom\Types\Type;
 use function Psl\Type\float;
 use function Psl\Type\int;
 use function Psl\Type\instance_of;
-use function Psl\Type\string;
 use function Psl\Type\union;
 use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
@@ -62,15 +61,17 @@ final readonly class MinorMonetaryType implements Type
             : $value;
 
         return (match (true) {
-            $candidate instanceof Money => $candidate->getCurrency()->isEqualTo($this->currency)
-                ? Ok($candidate)
-                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $candidate->getCurrency()->getCurrencyCode()))),
+            $candidate instanceof Money => Ok($candidate),
+            is_string($candidate) => MoneyParser::parse($candidate)
+                ->orElse(fn() => attempt(fn() => Money::ofMinor(MoneyParser::exact($candidate), $this->currency))),
             default => attempt(function () use ($candidate) {
-                $amount = union(string(), float(), int())->assert($candidate);
+                $amount = union(float(), int())->assert($candidate);
                 return Money::ofMinor(MoneyParser::exact($amount), $this->currency);
             }),
         })
-            ->map(fn(Money $money) => Some($money))
+            ->andThen(fn(Money $money) => $money->getCurrency()->isEqualTo($this->currency)
+                ? Ok(Some($money))
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $money->getCurrency()->getCurrencyCode()))))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 

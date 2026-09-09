@@ -42,10 +42,39 @@ class MonetaryTypeTest extends TestCase
             ['100.000', 'EUR', Money::of(100, 'EUR')],
             ['1234.567', 'IQD', Money::of('1234.567', 'IQD')],
             ['1234.5678', 'UYW', Money::of('1234.5678', 'UYW')],
+            ['GBP 100.00', 'GBP', Money::of(100, 'GBP')],
+            ['EUR 1234.56', 'EUR', Money::of('1234.56', 'EUR')],
             [Money::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
             // An exactly-representable RationalMoney coerces without rounding.
             [RationalMoney::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
         ];
+    }
+
+    #[Test]
+    public function it_reads_back_the_string_a_money_casts_itself_to(): void
+    {
+        $type = new MonetaryType(Currency::of('GBP'));
+        $money = Money::of(100, 'GBP');
+
+        $this->assertTrue($type->coerce((string) $money)->unwrap()->unwrap()->isEqualTo($money));
+    }
+
+    #[Test]
+    public function it_reads_a_bare_amount_and_a_prefixed_amount_as_major_units(): void
+    {
+        $type = new MonetaryType(Currency::of('GBP'));
+
+        $this->assertTrue($type->coerce('100')->unwrap()->unwrap()->isEqualTo(Money::of(100, 'GBP')));
+        $this->assertTrue($type->coerce('GBP 100.00')->unwrap()->unwrap()->isEqualTo(Money::of(100, 'GBP')));
+    }
+
+    #[Test]
+    public function it_returns_err_if_value_is_a_prefixed_amount_of_different_currency(): void
+    {
+        $type = new MonetaryType(Currency::of('GBP'));
+        $result = $type->coerce($value = 'EUR 100.00');
+
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 
     #[Test]
