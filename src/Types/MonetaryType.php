@@ -22,7 +22,6 @@ use Superscript\Axiom\Types\Type;
 use function Psl\Type\float;
 use function Psl\Type\int;
 use function Psl\Type\instance_of;
-use function Psl\Type\string;
 use function Psl\Type\union;
 use function Superscript\Monads\Option\Some;
 use function Superscript\Monads\Result\attempt;
@@ -53,6 +52,15 @@ final readonly class MonetaryType implements Type
     }
 
     /**
+     * Reads a string in either notation an amount is written in: the
+     * currency-carrying one a Money casts itself to ("GBP 100.00"), and the
+     * bare one a configuration authors ("100"), which takes this type's
+     * currency.
+     *
+     * The first form is what a serialized value of this type looks like on the
+     * wire, so it has to be readable: a caller that echoes a value back — the
+     * documents endpoint does exactly that — must get it read, not rejected.
+     *
      * @return Result<Option<Money>, TransformValueException>
      */
     public function coerce(mixed $value): Result
@@ -62,15 +70,17 @@ final readonly class MonetaryType implements Type
             : $value;
 
         return (match (true) {
-            $candidate instanceof Money => $candidate->getCurrency()->isEqualTo($this->currency)
-                ? Ok($candidate)
-                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $candidate->getCurrency()->getCurrencyCode()))),
+            $candidate instanceof Money => Ok($candidate),
+            is_string($candidate) => MoneyParser::parse($candidate)
+                ->orElse(fn() => attempt(fn() => Money::of(MoneyParser::exact($candidate), $this->currency))),
             default => attempt(function () use ($candidate) {
-                $amount = union(string(), float(), int())->assert($candidate);
+                $amount = union(float(), int())->assert($candidate);
                 return Money::of(MoneyParser::exact($amount), $this->currency);
             }),
         })
-            ->map(fn(Money $money) => Some($money))
+            ->andThen(fn(Money $money) => $money->getCurrency()->isEqualTo($this->currency)
+                ? Ok(Some($money))
+                : Err(new InvalidArgumentException(sprintf("Mismatching currencies: expected %s, got %s", $this->currency->getCurrencyCode(), $money->getCurrency()->getCurrencyCode()))))
             ->mapErr(fn() => new TransformValueException(type: 'money', value: $value));
     }
 

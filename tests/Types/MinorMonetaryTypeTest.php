@@ -38,6 +38,8 @@ class MinorMonetaryTypeTest extends TestCase
             [150, 'GBP', Money::ofMinor(150, 'GBP')],
             ['150', 'EUR', Money::ofMinor(150, 'EUR')],
             ['100.000', 'EUR', Money::ofMinor(100, 'EUR')],
+            ['GBP 100.00', 'GBP', Money::of(100, 'GBP')],
+            ['EUR 12.34', 'EUR', Money::of('12.34', 'EUR')],
             [Money::ofMinor(100, 'GBP'), 'GBP', Money::ofMinor(100, 'GBP')],
         ];
     }
@@ -67,6 +69,42 @@ class MinorMonetaryTypeTest extends TestCase
             [null],
             [Money::ofMinor(100, 'USD'), 'EUR'], // Mismatching currency
         ];
+    }
+
+    /**
+     * The inverse property a round trip depends on: a value of this type is
+     * serialized by casting it, and a caller that sends it back must have it
+     * read rather than rejected.
+     */
+    #[Test]
+    public function it_reads_back_the_string_a_money_casts_itself_to(): void
+    {
+        $type = new MinorMonetaryType(Currency::of('GBP'));
+        $money = Money::of(100, 'GBP');
+
+        $this->assertTrue($type->coerce((string) $money)->unwrap()->unwrap()->isEqualTo($money));
+    }
+
+    /**
+     * Only a bare amount is in minor units. A prefixed one carries its own
+     * scale: "GBP 100.00" is a hundred pounds on the wire, never a hundred pence.
+     */
+    #[Test]
+    public function it_reads_a_bare_amount_as_minor_units_and_a_prefixed_amount_as_major_units(): void
+    {
+        $type = new MinorMonetaryType(Currency::of('GBP'));
+
+        $this->assertTrue($type->coerce('100')->unwrap()->unwrap()->isEqualTo(Money::of(1, 'GBP')));
+        $this->assertTrue($type->coerce('GBP 100.00')->unwrap()->unwrap()->isEqualTo(Money::of(100, 'GBP')));
+    }
+
+    #[Test]
+    public function it_returns_err_if_value_is_a_prefixed_amount_of_different_currency(): void
+    {
+        $type = new MinorMonetaryType(Currency::of('GBP'));
+        $result = $type->coerce($value = 'EUR 100.00');
+
+        $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
 
     #[Test]
