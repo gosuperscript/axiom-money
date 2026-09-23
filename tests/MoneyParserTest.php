@@ -30,6 +30,10 @@ class MoneyParserTest extends TestCase
             ['£1.23', Money::of('1.23', 'GBP')],
             ['USD 100.50', Money::of('100.50', 'USD')],
             [Money::of('100.50', 'EUR'), Money::of('100.50', 'EUR')],
+            'a symbol amount with thousands separators' => ['£1,000,000', Money::of(1000000, 'GBP')],
+            'an ISO amount of seven digits' => ['GBP 1000000', Money::of(1000000, 'GBP')],
+            'a symbol amount surrounded by whitespace' => ['  £1,000,000  ', Money::of(1000000, 'GBP')],
+            'an ISO amount surrounded by whitespace' => ['  GBP 5  ', Money::of(5, 'GBP')],
         ];
     }
 
@@ -54,6 +58,12 @@ class MoneyParserTest extends TestCase
             ['EUR foobar'],
             ['1 EUR'],
             ['GBP'],
+            'an ISO code run into a shorthand amount' => ['GBP1M'],
+            'a symbol amount followed by a shorthand suffix' => ['£1m'],
+            'an ISO amount followed by a shorthand suffix' => ['GBP 1M'],
+            'an ISO amount preceded by text' => ['xx GBP 5'],
+            'an ISO amount followed by text' => ['GBP 5 yy'],
+            'a bare amount with thousands separators' => ['1,000,000'],
         ];
     }
 

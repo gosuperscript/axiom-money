@@ -47,6 +47,10 @@ class MonetaryTypeTest extends TestCase
             [Money::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
             // An exactly-representable RationalMoney coerces without rounding.
             [RationalMoney::of(100, 'EUR'), 'EUR', Money::of(100, 'EUR')],
+            'a symbol amount with thousands separators' => ['£1,000,000', 'GBP', Money::of(1000000, 'GBP')],
+            'an ISO amount of seven digits' => ['GBP 1000000', 'GBP', Money::of(1000000, 'GBP')],
+            'a bare amount with pence' => ['1000000.50', 'GBP', Money::of('1000000.50', 'GBP')],
+            'a symbol amount surrounded by whitespace' => ['  £1,000,000  ', 'GBP', Money::of(1000000, 'GBP')],
         ];
     }
 
@@ -133,6 +137,12 @@ class MonetaryTypeTest extends TestCase
             [[]],
             [null],
             [Money::of(100, 'USD'), 'EUR'], // Different currency
+            'an ISO code run into a shorthand amount' => ['GBP1M', 'GBP'],
+            'a symbol amount followed by a shorthand suffix' => ['£1m', 'GBP'],
+            'an ISO amount followed by a shorthand suffix' => ['GBP 1M', 'GBP'],
+            'an ISO amount preceded by text' => ['xx GBP 5', 'GBP'],
+            'an ISO amount followed by text' => ['GBP 5 yy', 'GBP'],
+            'a bare amount with thousands separators' => ['1,000,000', 'GBP'],
         ];
     }
 
