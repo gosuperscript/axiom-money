@@ -11,6 +11,8 @@ use NumberFormatter;
 use SebastianBergmann\Exporter\Exporter;
 use Superscript\Monads\Result\Result;
 
+use function Psl\Str\length;
+use function Psl\Str\trim;
 use function Psl\Type\non_empty_string;
 use function Superscript\Monads\Result\Err;
 use function Superscript\Monads\Result\Ok;
@@ -30,7 +32,9 @@ class MoneyParser
         }
 
         if (is_string($money)) {
-            preg_match('/(?P<currency>[A-Z]{3}) (?P<amount>\d+(?:\.\d+)?)\b/', $money, $matches);
+            $input = trim($money);
+
+            preg_match('/^(?P<currency>[A-Z]{3}) (?P<amount>\d+(?:\.\d+)?)$/', $input, $matches);
 
             if (!empty($matches)) {
                 try {
@@ -42,10 +46,14 @@ class MoneyParser
 
             $formatter = new NumberFormatter('en_GB', NumberFormatter::CURRENCY);
             $currency = '';
+            $position = 0;
 
-            $amount = $formatter->parseCurrency($money, $currency);
+            $amount = $formatter->parseCurrency($input, $currency, $position);
 
-            if ($amount !== false) {
+            // parseCurrency stops at the first character it cannot read and returns
+            // the amount read so far, so "£1m" yields £1 unless the whole input is
+            // required to be consumed. $position counts characters, not bytes.
+            if ($amount !== false && $position === length($input)) {
                 try {
                     return Ok(Money::of(self::exact($amount), non_empty_string()->assert($currency)));
                 } catch (RoundingNecessaryException $exception) {
