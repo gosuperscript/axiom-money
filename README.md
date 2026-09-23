@@ -147,6 +147,23 @@ A **cross-currency** operation (`Money<'GBP'> + Money<'USD'>`) matches no rule a
 
 > **Rounding note (breaking change):** previous versions returned an exact `Brick\Money\RationalMoney` from `*`/`/` and propagated it through `+`/`-` ("rational is contagious"). Under the typed model each operator has a fixed return type, so `*`/`/` now round to a `Money` at the currency scale using the extension's rounding mode. Chain in the rational domain yourself (via Brick) if you need to defer rounding.
 
+### Allocation
+
+`Allocation` proportionally allocates or equally splits a `Money`, delegating to brick/money's
+exact minor-unit algorithm: any remainder is distributed over the earliest parts, so the parts
+always sum to the original amount — no penny drift.
+
+```php
+use Brick\Money\Money;
+use Superscript\Axiom\Money\Allocation;
+
+Allocation::allocate(Money::of('25.00', 'GBP'), 5000, 4000)->unwrap(); // [GBP 13.89, GBP 11.11]
+Allocation::split(Money::of('100.00', 'GBP'), 3)->unwrap();            // [GBP 33.34, GBP 33.33, GBP 33.33]
+```
+
+Both return a `Result`; invalid input (no ratios, all-zero ratios, a negative ratio, or fewer
+than one part) is an `Err(InvalidArgumentException)`.
+
 ### Monetary Intervals
 
 Work with ranges of monetary values:
