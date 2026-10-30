@@ -14,6 +14,7 @@ use Superscript\Monads\Option\Option;
 use Superscript\Monads\Result\Result;
 use Superscript\Axiom\Exceptions\TransformValueException;
 use Superscript\Axiom\Money\MoneyParser;
+use Superscript\Axiom\Types\HasValueIdentity;
 use Superscript\Axiom\Types\Shapes\LiteralShape;
 use Superscript\Axiom\Types\Shapes\OpaqueShape;
 use Superscript\Axiom\Types\Shapes\Shape;
@@ -31,7 +32,7 @@ use function Superscript\Monads\Result\Ok;
 /**
  * @implements Type<Money>
  */
-final readonly class MonetaryType implements Type
+final readonly class MonetaryType implements Type, HasValueIdentity
 {
     public function __construct(public Currency $currency, public RoundingMode $roundingMode = RoundingMode::HalfUp) {}
 
@@ -84,6 +85,17 @@ final readonly class MonetaryType implements Type
     public function format(mixed $value): string
     {
         return instance_of(Money::class)->assert($value)->formatToLocale('en_GB', allowWholeNumber: true);
+    }
+
+    /**
+     * Agrees with {@see Money::isSameValueAs}: the amount compares as a number,
+     * so GBP 100 and GBP 100.00 key alike.
+     */
+    public function identityKey(mixed $value): string
+    {
+        $money = instance_of(Money::class)->assert($value);
+
+        return sprintf('%s %s', $money->getCurrency()->getCurrencyCode(), $money->getAmount()->toBigRational());
     }
 
     /**

@@ -13,6 +13,7 @@ use Superscript\Monads\Result\Result;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Types\HasValueIdentity;
 use Superscript\Axiom\Types\Shapes\LiteralShape;
 use Superscript\Axiom\Types\Shapes\OpaqueShape;
 use Superscript\Axiom\Types\Shapes\Shape;
@@ -27,7 +28,7 @@ use function Superscript\Monads\Result\Ok;
 /**
  * @implements Type<MonetaryInterval>
  */
-final readonly class MonetaryIntervalType implements Type
+final readonly class MonetaryIntervalType implements Type, HasValueIdentity
 {
     public function __construct(public Currency $currency) {}
 
@@ -125,6 +126,25 @@ final readonly class MonetaryIntervalType implements Type
     private static function amount(Money $money): string
     {
         return $money->formatToLocale('en_GB', allowWholeNumber: true);
+    }
+
+    /**
+     * Agrees with {@see MonetaryInterval::isEqualTo}: endpoints compare as
+     * amounts, so [GBP 0,GBP 50000] and [GBP 0.00,GBP 50000.00] key alike, and
+     * the notation's openness counts.
+     */
+    public function identityKey(mixed $value): string
+    {
+        $interval = instance_of(MonetaryInterval::class)->assert($value);
+
+        return sprintf(
+            '%s%s %s,%s%s',
+            $interval->notation->openingSymbol(),
+            $interval->left->getCurrency()->getCurrencyCode(),
+            $interval->left->getAmount()->toBigRational(),
+            $interval->right->getAmount()->toBigRational(),
+            $interval->notation->closingSymbol(),
+        );
     }
 
     /**

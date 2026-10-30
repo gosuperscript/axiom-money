@@ -170,4 +170,26 @@ class MonetaryIntervalTypeTest extends TestCase
         $result = $type->assert($value = new MonetaryInterval(Money::of(1, 'USD'), Money::of(2, 'USD'), IntervalNotation::Closed));
         $this->assertEquals(new TransformValueException(type: 'monetary-interval', value: $value), $result->unwrapErr());
     }
+
+    #[Test]
+    #[DataProvider('identities')]
+    public function it_keys_intervals_alike_exactly_when_they_are_equal(MonetaryInterval $left, MonetaryInterval $right): void
+    {
+        $type = new MonetaryIntervalType(Currency::of('GBP'));
+
+        $this->assertSame($left->isEqualTo($right), $type->identityKey($left) === $type->identityKey($right));
+    }
+
+    public static function identities(): array
+    {
+        $band = fn(string $left, string $right, IntervalNotation $notation = IntervalNotation::Closed) =>
+            new MonetaryInterval(Money::of($left, 'GBP'), Money::of($right, 'GBP'), $notation);
+
+        return [
+            'same spelling' => [$band('0', '50000'), $band('0', '50000')],
+            'trailing zeros' => [$band('0', '50000'), $band('0.00', '50000.00')],
+            'different bound' => [$band('0', '50000'), $band('0', '60000')],
+            'different openness' => [$band('0', '50000'), $band('0', '50000', IntervalNotation::LeftOpen)],
+        ];
+    }
 }

@@ -198,4 +198,22 @@ class MonetaryTypeTest extends TestCase
         $result = $type->assert($value = RationalMoney::of(1, 'EUR'));
         $this->assertEquals(new TransformValueException(type: 'money', value: $value), $result->unwrapErr());
     }
+
+    #[Test]
+    #[DataProvider('identities')]
+    public function it_keys_monies_alike_exactly_when_they_are_the_same_value(Money $left, Money $right): void
+    {
+        $type = new MonetaryType(Currency::of('GBP'));
+
+        $this->assertSame($left->isSameValueAs($right), $type->identityKey($left) === $type->identityKey($right));
+    }
+
+    public static function identities(): array
+    {
+        return [
+            'same spelling' => [Money::of(100, 'GBP'), Money::of(100, 'GBP')],
+            'trailing zeros' => [Money::of(100, 'GBP'), Money::of('100.00', 'GBP')],
+            'different amount' => [Money::of(100, 'GBP'), Money::of('100.01', 'GBP')],
+        ];
+    }
 }
