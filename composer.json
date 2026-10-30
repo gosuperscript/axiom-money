@@ -16,7 +16,7 @@
         "php": "^8.4",
         "ext-intl": "*",
         "brick/money": "^0.14.1",
-        "gosuperscript/axiom": "^0.6.9",
+        "gosuperscript/axiom": "^0.6.17",
         "superscript/interval": "^2.0",
         "superscript/monetary-interval": "^0.2.0"
     },

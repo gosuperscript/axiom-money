@@ -14,6 +14,7 @@ use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\Axiom\Money\Types\MonetaryType;
 use Superscript\Axiom\Operators\Operator;
 use Superscript\Axiom\Types\BooleanType;
+use Superscript\Axiom\Types\IdentityLiteralType;
 use Superscript\Axiom\Types\NumberType;
 use Superscript\Axiom\Types\Type;
 use Superscript\MonetaryInterval\MonetaryInterval;
@@ -44,6 +45,8 @@ use function Superscript\Monads\Result\attempt;
  * Equality is the package's own: core refuses `==` on opaque operands, so the
  * aliases are declared here over same-currency money and over monetary
  * intervals, binding Brick's domain comparison rather than object identity.
+ * A money or monetary-interval literal is typed as itself, so an equality
+ * that can never hold — `GBP 100 === GBP 200` — is refused at compile time.
  */
 final class MoneyExtension extends Extension
 {
@@ -132,8 +135,14 @@ final class MoneyExtension extends Extension
     public function literals(): array
     {
         return [
-            Money::class => fn(object $value) => new MonetaryType(instance_of(Money::class)->assert($value)->getCurrency()),
-            MonetaryInterval::class => fn(object $value) => new MonetaryIntervalType(instance_of(MonetaryInterval::class)->assert($value)->left->getCurrency()),
+            Money::class => fn(object $value) => new IdentityLiteralType(
+                $value,
+                new MonetaryType(instance_of(Money::class)->assert($value)->getCurrency()),
+            ),
+            MonetaryInterval::class => fn(object $value) => new IdentityLiteralType(
+                $value,
+                new MonetaryIntervalType(instance_of(MonetaryInterval::class)->assert($value)->left->getCurrency()),
+            ),
         ];
     }
 

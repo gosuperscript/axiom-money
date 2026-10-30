@@ -23,6 +23,7 @@ use Superscript\Axiom\Source;
 use Superscript\Axiom\Sources\InfixExpression;
 use Superscript\Axiom\Sources\StaticSource;
 use Superscript\Axiom\Sources\SymbolSource;
+use Superscript\Axiom\Types\IdentityLiteralType;
 use Superscript\Axiom\Types\Type;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
@@ -246,23 +247,72 @@ class MoneyExtensionTest extends TestCase
     // ---- literals ----------------------------------------------------------
 
     #[Test]
-    public function it_registers_the_money_literal_with_its_currency(): void
+    public function it_registers_the_money_literal_as_itself_in_its_currency(): void
     {
         $type = (new Expression(new StaticSource(Money::of(100, 'GBP')), dialect: $this->dialect()))
             ->infer()->unwrap();
 
-        $this->assertEquals($this->gbp()->shape(), $type->shape());
+        $this->assertInstanceOf(IdentityLiteralType::class, $type);
+        $this->assertEquals($this->gbp()->shape(), $type->base->shape());
     }
 
     #[Test]
-    public function it_registers_the_monetary_interval_literal_with_its_currency(): void
+    public function it_registers_the_monetary_interval_literal_as_itself_in_its_currency(): void
     {
         $interval = new MonetaryInterval(Money::of(1, 'GBP'), Money::of(2, 'GBP'), IntervalNotation::Closed);
 
         $type = (new Expression(new StaticSource($interval), dialect: $this->dialect()))
             ->infer()->unwrap();
 
-        $this->assertEquals((new MonetaryIntervalType(Currency::of('GBP')))->shape(), $type->shape());
+        $this->assertInstanceOf(IdentityLiteralType::class, $type);
+        $this->assertEquals((new MonetaryIntervalType(Currency::of('GBP')))->shape(), $type->base->shape());
+    }
+
+    #[Test]
+    public function it_compares_two_spellings_of_one_money_literal_as_equal(): void
+    {
+        $result = $this->evaluate(
+            new InfixExpression(new StaticSource(Money::of(100, 'GBP')), '===', new StaticSource(Money::of('100.00', 'GBP'))),
+            [],
+            [],
+        );
+
+        $this->assertTrue($result);
+    }
+
+    #[Test]
+    #[DataProvider('equalityOperators')]
+    public function it_refuses_an_equality_between_money_literals_that_can_never_be_equal(string $operator): void
+    {
+        $result = (new Expression(
+            new InfixExpression(new StaticSource(Money::of(100, 'GBP')), $operator, new StaticSource(Money::of(200, 'GBP'))),
+            dialect: $this->dialect(),
+        ))->compile();
+
+        $this->assertTrue($result->isErr());
+    }
+
+    #[Test]
+    #[DataProvider('equalityOperators')]
+    public function it_refuses_an_equality_between_monetary_interval_literals_that_can_never_be_equal(string $operator): void
+    {
+        $result = (new Expression(
+            new InfixExpression(
+                new StaticSource(new MonetaryInterval(Money::of(1, 'GBP'), Money::of(2, 'GBP'), IntervalNotation::Closed)),
+                $operator,
+                new StaticSource(new MonetaryInterval(Money::of(1, 'GBP'), Money::of(3, 'GBP'), IntervalNotation::Closed)),
+            ),
+            dialect: $this->dialect(),
+        ))->compile();
+
+        $this->assertTrue($result->isErr());
+    }
+
+    public static function equalityOperators(): Generator
+    {
+        foreach (['=', '==', '===', '!=', '!=='] as $operator) {
+            yield $operator => [$operator];
+        }
     }
 
     // ---- refusals ----------------------------------------------------------
