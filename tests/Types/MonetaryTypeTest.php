@@ -14,6 +14,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Money\MoneyDisplay;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryType;
 use Superscript\Axiom\Types\Shapes\LiteralShape;
@@ -21,6 +22,7 @@ use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(MonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
+#[UsesClass(MoneyDisplay::class)]
 class MonetaryTypeTest extends TestCase
 {
     #[DataProvider('transformProvider')]

@@ -40,7 +40,9 @@ class MoneyParser
                 }
             }
 
-            $formatter = new NumberFormatter('en_GB', NumberFormatter::CURRENCY);
+            /** @var NumberFormatter|null $formatter */
+            static $formatter = null;
+            $formatter ??= new NumberFormatter('en_GB', NumberFormatter::CURRENCY);
             $currency = '';
 
             $amount = $formatter->parseCurrency($money, $currency);

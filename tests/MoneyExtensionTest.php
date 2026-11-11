@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Superscript\Axiom\Dialect;
 use Superscript\Axiom\Expression;
 use Superscript\Axiom\Money\MoneyExtension;
+use Superscript\Axiom\Money\MoneyDisplay;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\Axiom\Money\Types\MonetaryType;
@@ -32,6 +33,7 @@ use Superscript\MonetaryInterval\MonetaryInterval;
 #[UsesClass(MonetaryType::class)]
 #[UsesClass(MonetaryIntervalType::class)]
 #[UsesClass(MoneyParser::class)]
+#[UsesClass(MoneyDisplay::class)]
 class MoneyExtensionTest extends TestCase
 {
     private function dialect(RoundingMode $rounding = RoundingMode::HalfUp): Dialect

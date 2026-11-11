@@ -13,12 +13,14 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Money\MoneyDisplay;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\DynamicMonetaryType;
 use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(DynamicMonetaryType::class)]
 #[UsesClass(MoneyParser::class)]
+#[UsesClass(MoneyDisplay::class)]
 class DynamicMonetaryTypeTest extends TestCase
 {
     #[DataProvider('transformProvider')]

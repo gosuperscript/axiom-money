@@ -20,7 +20,16 @@
       "ignoreSourceCodeByRegex": [
         ".*match\\s*\\(true\\).*"
       ],
-    }
+    },
+    "AssignCoalesce": {
+      // The intl formatters are built once per process because building one
+      // costs far more than using it. Rebuilding on every call returns the same
+      // string, so the mutant that drops the reuse is equivalent and no test
+      // can kill it.
+      "ignoreSourceCodeByRegex": [
+        ".*\\$formatter \\?\\?= new .*",
+      ],
+    },
   },
   "logs": {
     "text": "build/infection.log",
