@@ -14,6 +14,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Superscript\MonetaryInterval\IntervalNotation;
 use Superscript\MonetaryInterval\MonetaryInterval;
 use Superscript\Axiom\Exceptions\TransformValueException;
+use Superscript\Axiom\Money\MoneyDisplay;
 use Superscript\Axiom\Money\MoneyParser;
 use Superscript\Axiom\Money\Types\MonetaryIntervalType;
 use Superscript\Axiom\Types\Shapes\LiteralShape;
@@ -21,6 +22,7 @@ use Superscript\Axiom\Types\Shapes\OpaqueShape;
 
 #[CoversClass(MonetaryIntervalType::class)]
 #[UsesClass(MoneyParser::class)]
+#[UsesClass(MoneyDisplay::class)]
 class MonetaryIntervalTypeTest extends TestCase
 {
     #[DataProvider('transformProvider')]

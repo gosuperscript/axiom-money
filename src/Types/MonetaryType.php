@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Superscript\Axiom\Money\MoneyDisplay;
 use Brick\Math\RoundingMode;
 use Brick\Money\Context\DefaultContext;
 use Brick\Money\Currency;
@@ -84,7 +85,7 @@ final readonly class MonetaryType implements Type, HasValueIdentity
      */
     public function format(mixed $value): string
     {
-        return instance_of(Money::class)->assert($value)->formatToLocale('en_GB', allowWholeNumber: true);
+        return MoneyDisplay::format(instance_of(Money::class)->assert($value));
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Superscript\Axiom\Money\Types;
 
+use Superscript\Axiom\Money\MoneyDisplay;
 use Brick\Money\Currency;
 use Brick\Money\Money;
 use InvalidArgumentException;
@@ -125,7 +126,7 @@ final readonly class MonetaryIntervalType implements Type, HasValueIdentity
      */
     private static function amount(Money $money): string
     {
-        return $money->formatToLocale('en_GB', allowWholeNumber: true);
+        return MoneyDisplay::format($money);
     }
 
     /**
